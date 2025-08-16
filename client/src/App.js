@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
+import VendorGraph from './pages/VendorGraph';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -36,6 +37,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/vendors/:id" element={<VendorDetail />} />
+        <Route path="/vendor-graph" element={<VendorGraph />} />
         <Route path="/users" element={<Users />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />

@@ -3,10 +3,11 @@ import { useQuery } from 'react-query';
 import { vendorAPI } from '../services/api';
 import { 
   Building2, 
-  DollarSign,
-  AlertTriangle,
-  CheckCircle,
-  Clock
+  DollarSign, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock,
+  Network
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -321,6 +322,13 @@ const Dashboard = () => {
             >
               <Clock className="h-6 w-6 text-primary-600 mr-3" />
               <span className="text-sm font-medium text-gray-900">Expiring Contracts</span>
+            </button>
+            <button 
+              onClick={() => window.location.href = '/vendor-graph'}
+              className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Network className="h-6 w-6 text-primary-600 mr-3" />
+              <span className="text-sm font-medium text-gray-900">Vendor Graph</span>
             </button>
           </div>
         </div>

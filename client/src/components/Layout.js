@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Network
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -23,6 +24,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Vendors', href: '/vendors', icon: Building2 },
+    { name: 'Vendor Graph', href: '/vendor-graph', icon: Network },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
