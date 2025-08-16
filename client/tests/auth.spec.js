@@ -40,16 +40,20 @@ test.describe('Registration', () => {
 
   test('should display registration form', async ({ page }) => {
     await expect(page.locator('h2')).toContainText('Create your account');
-    await expect(page.locator('input[name="name"]')).toBeVisible();
+    await expect(page.locator('input[name="tenantName"]')).toBeVisible();
+    await expect(page.locator('input[name="firstName"]')).toBeVisible();
+    await expect(page.locator('input[name="lastName"]')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
     await expect(page.locator('input[name="confirmPassword"]')).toBeVisible();
   });
 
   test('should validate password confirmation', async ({ page }) => {
-    await page.fill('input[name="name"]', 'Test User');
+    await page.fill('input[name="tenantName"]', 'Test Organization');
+    await page.fill('input[name="firstName"]', 'Test');
+    await page.fill('input[name="lastName"]', 'User');
     await page.fill('input[name="email"]', 'test@example.com');
-    await page.fill('input[name="password"]', 'password123');
+    await page.fill('input[name="password"]', 'Password123!');
     await page.fill('input[name="confirmPassword"]', 'differentpassword');
     
     await page.click('button[type="submit"]');
