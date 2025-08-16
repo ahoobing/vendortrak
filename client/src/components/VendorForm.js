@@ -5,16 +5,17 @@ import { vendorAPI } from '../services/api';
 import { Building2, Phone, Mail, Globe, MapPin, DollarSign, AlertTriangle } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm({
     defaultValues: vendor ? {
       name: vendor.name || '',
@@ -75,10 +76,39 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
     setIsSubmitting(true);
     
     try {
+      console.log('Current user:', user);
+      console.log('Form data before processing:', data);
+      
+      // Set default values if not provided
+      if (!data.status) data.status = 'active';
+      if (!data.riskLevel) data.riskLevel = 'medium';
+      
       // Format contract value as number
       if (data.contractValue) {
         data.contractValue = parseFloat(data.contractValue.replace(/[^0-9.-]+/g, ''));
       }
+
+      // Remove empty date fields
+      if (!data.contractStartDate) delete data.contractStartDate;
+      if (!data.contractEndDate) delete data.contractEndDate;
+
+      // Remove empty string fields
+      if (!data.email || data.email.trim() === '') delete data.email;
+      if (!data.website || data.website.trim() === '') delete data.website;
+      if (!data.phone || data.phone.trim() === '') delete data.phone;
+      if (!data.address || data.address.trim() === '') delete data.address;
+      if (!data.city || data.city.trim() === '') delete data.city;
+      if (!data.state || data.state.trim() === '') delete data.state;
+      if (!data.zipCode || data.zipCode.trim() === '') delete data.zipCode;
+      if (!data.country || data.country.trim() === '') delete data.country;
+      if (!data.industry || data.industry.trim() === '') delete data.industry;
+      if (!data.description || data.description.trim() === '') delete data.description;
+      if (!data.primaryContact || data.primaryContact.trim() === '') delete data.primaryContact;
+      if (!data.primaryContactEmail || data.primaryContactEmail.trim() === '') delete data.primaryContactEmail;
+      if (!data.primaryContactPhone || data.primaryContactPhone.trim() === '') delete data.primaryContactPhone;
+      if (!data.notes || data.notes.trim() === '') delete data.notes;
+
+      console.log('Form data after processing:', data);
 
       if (vendor) {
         await updateVendorMutation.mutateAsync(data);

@@ -104,15 +104,17 @@ router.get('/:id', async (req, res) => {
 // Create new vendor
 router.post('/', requireManager, [
   body('name').trim().isLength({ min: 1, max: 200 }).withMessage('Vendor name is required'),
-  body('vendorType').isIn(['technology', 'consulting', 'services', 'products', 'other']).withMessage('Valid vendor type required'),
-  body('status').optional().isIn(['active', 'inactive', 'suspended', 'prospect']),
-  body('contactInfo.email').optional().isEmail().withMessage('Valid email required'),
-  body('contactInfo.website').optional().isURL().withMessage('Valid URL required'),
-  body('riskLevel').optional().isIn(['low', 'medium', 'high', 'critical'])
+  body('email').optional().isEmail().withMessage('Valid email required'),
+  body('website').optional().isURL().withMessage('Valid URL required'),
+  body('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
+  body('riskLevel').optional().isIn(['low', 'medium', 'high'])
 ], async (req, res) => {
   try {
+    console.log('Vendor creation request body:', req.body);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -142,11 +144,10 @@ router.post('/', requireManager, [
 // Update vendor
 router.put('/:id', requireManager, [
   body('name').optional().trim().isLength({ min: 1, max: 200 }),
-  body('vendorType').optional().isIn(['technology', 'consulting', 'services', 'products', 'other']),
-  body('status').optional().isIn(['active', 'inactive', 'suspended', 'prospect']),
-  body('contactInfo.email').optional().isEmail(),
-  body('contactInfo.website').optional().isURL(),
-  body('riskLevel').optional().isIn(['low', 'medium', 'high', 'critical'])
+  body('email').optional().isEmail(),
+  body('website').optional().isURL(),
+  body('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
+  body('riskLevel').optional().isIn(['low', 'medium', 'high'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { vendorAPI } from '../services/api';
 import { 
@@ -11,9 +11,6 @@ import {
   Building2, 
   Phone, 
   Mail, 
-  Globe,
-  Calendar,
-  DollarSign,
   AlertTriangle,
   CheckCircle,
   Clock,
