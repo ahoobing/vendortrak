@@ -15,9 +15,6 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Trust proxy for rate limiting
-app.set('trust proxy', 1);
-
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -27,14 +24,21 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting
+// Rate limiting - temporarily disabled for auth routes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true,
+  standardHeaders: false,
   legacyHeaders: false
 });
-app.use(limiter);
+
+// Apply rate limiting to all routes except auth
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/auth')) {
+    return next();
+  }
+  return limiter(req, res, next);
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
