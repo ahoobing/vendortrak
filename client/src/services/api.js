@@ -87,6 +87,6 @@ export const dataTypeAPI = {
   update: (id, data) => api.put(`/api/data-types/${id}`, data),
   delete: (id) => api.delete(`/api/data-types/${id}`),
   getClassifications: () => api.get('/api/data-types/classifications'),
-  getCategories: () => api.get('/api/data-types/categories'),
+
   getStats: () => api.get('/api/data-types/stats')
 };
