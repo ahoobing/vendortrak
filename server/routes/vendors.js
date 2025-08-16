@@ -1,17 +1,19 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const Vendor = require('../models/Vendor');
-const { requireManager } = require('../middleware/auth');
+const { authenticateToken, requireManager } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Apply authentication to all vendor routes
+router.use(authenticateToken);
 
 // Get all vendors for tenant with filtering and pagination
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-  query('status').optional().isIn(['active', 'inactive', 'suspended', 'prospect']),
-  query('vendorType').optional().isIn(['technology', 'consulting', 'services', 'products', 'other']),
-  query('riskLevel').optional().isIn(['low', 'medium', 'high', 'critical']),
+  query('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
+  query('riskLevel').optional().isIn(['low', 'medium', 'high']),
   query('search').optional().trim()
 ], async (req, res) => {
   try {
@@ -24,7 +26,6 @@ router.get('/', [
       page = 1,
       limit = 20,
       status,
-      vendorType,
       riskLevel,
       search,
       sortBy = 'name',
@@ -34,13 +35,12 @@ router.get('/', [
     // Build filter object
     const filter = { tenantId: req.tenant._id };
     if (status) filter.status = status;
-    if (vendorType) filter.vendorType = vendorType;
     if (riskLevel) filter.riskLevel = riskLevel;
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { 'contactInfo.email': { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { email: { $regex: search, $options: 'i' } },
+        { industry: { $regex: search, $options: 'i' } }
       ];
     }
 
