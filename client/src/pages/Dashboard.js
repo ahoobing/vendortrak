@@ -5,9 +5,7 @@ import {
   Building2, 
   Users, 
   FileText, 
-  TrendingUp,
-  Activity,
-  Calendar
+  TrendingUp
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 

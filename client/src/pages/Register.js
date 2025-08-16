@@ -14,11 +14,8 @@ const Register = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm();
-
-  const password = watch('password');
 
   const onSubmit = async (data) => {
     setIsLoading(true);
