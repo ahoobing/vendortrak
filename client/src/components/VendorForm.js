@@ -78,7 +78,7 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
       if (data.results && data.results.length > 0) {
         toast.success(`Found ${data.results.length} potential matches`);
       } else {
-        toast.info('No exact matches found, but you can still fill in the details manually');
+        toast('No exact matches found, but you can still fill in the details manually');
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -88,7 +88,7 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
       const mockResults = generateMockSearchResults(searchTerm);
       setSearchResults(mockResults);
       setShowSearchResults(true);
-      toast.info('Using demo data - in production, this would search real company databases');
+              toast('Using demo data - in production, this would search real company databases');
     } finally {
       setIsSearching(false);
     }
