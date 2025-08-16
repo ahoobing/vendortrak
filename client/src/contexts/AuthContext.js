@@ -49,8 +49,26 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.error || 'Login failed';
-      toast.error(message);
+      let message = 'Login failed';
+      
+      if (error.response?.status === 401) {
+        message = 'Invalid email or password. Please check your credentials.';
+      } else if (error.response?.status === 404) {
+        message = 'User not found. Please check your email address.';
+      } else if (error.response?.status === 422) {
+        message = 'Invalid input. Please check your email and password format.';
+      } else if (error.response?.status >= 500) {
+        message = 'Server error. Please try again later.';
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message === 'Network Error') {
+        message = 'Network error. Please check your internet connection.';
+      }
+      
+      toast.error(message, {
+        duration: 8000, // 8 seconds for login errors
+        id: 'login-error', // Prevent duplicate toasts
+      });
       return { success: false, error: message };
     }
   };

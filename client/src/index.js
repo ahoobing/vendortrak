@@ -39,7 +39,7 @@ root.render(
                 },
               },
               error: {
-                duration: 5000,
+                duration: 8000,
                 iconTheme: {
                   primary: '#ef4444',
                   secondary: '#fff',
