@@ -47,5 +47,18 @@
       "html"
     ],
     "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"]
+  },
+  "usage": {
+    "development": {
+      "start": "npm start",
+      "dev": "npm run dev (with nodemon)",
+      "test": "npm test",
+      "test:watch": "npm run test:watch",
+      "test:coverage": "npm run test:coverage"
+    },
+    "testing": {
+      "setup": "npm run seed:test-user (creates test user for client tests)",
+      "test-user": "Email: test@example.com, Password: testpassword123"
+    }
   }
 }

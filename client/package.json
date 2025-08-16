@@ -78,5 +78,22 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6"
   },
-  "proxy": "http://localhost:5001"
+  "proxy": "http://localhost:5001",
+  "usage": {
+    "development": {
+      "start": "npm start",
+      "build": "npm run build",
+      "test": "npm test (Jest unit tests)",
+      "eject": "npm run eject"
+    },
+    "e2e-testing": {
+      "run-all": "npm run test:e2e",
+      "run-single": "npm run test:e2e:single \"test name\"",
+      "ui-mode": "npm run test:e2e:ui",
+      "headed-mode": "npm run test:e2e:headed",
+      "debug-mode": "npm run test:e2e:debug",
+      "show-report": "npm run test:e2e:report"
+    },
+    "prerequisites": "Ensure test user is created: npm run test:setup (from root)"
+  }
 }

@@ -8,12 +8,30 @@
     "server": "cd server && npm run dev",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test:setup": "cd server && npm run seed:test-user",
+    "test:e2e": "cd client && npm run test:e2e",
+    "test:e2e:single": "cd client && npm run test:e2e:single"
   },
   "keywords": ["vendor", "tracking", "multi-tenant", "mongodb", "react", "node"],
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "usage": {
+    "development": {
+      "install": "npm run install-all",
+      "start": "npm run dev",
+      "server-only": "npm run server",
+      "client-only": "npm run client"
+    },
+    "testing": {
+      "setup": "npm run test:setup (creates test user: test@example.com / testpassword123)",
+      "run-all-tests": "npm run test:e2e",
+      "run-single-test": "npm run test:e2e:single \"test name\"",
+      "test-user": "Email: test@example.com, Password: testpassword123"
+    },
+    "build": "npm run build"
   }
 }
