@@ -110,7 +110,7 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
     {
       onSuccess: () => {
         toast.success(dataType ? 'Data type updated successfully' : 'Data type created successfully');
-        queryClient.invalidateQueries('dataTypes');
+        queryClient.invalidateQueries(['dataTypes']);
         onSuccess();
       },
       onError: (error) => {

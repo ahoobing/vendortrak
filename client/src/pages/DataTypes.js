@@ -52,7 +52,16 @@ const DataTypes = () => {
       if (sortBy) params.sortBy = sortBy;
       if (sortOrder) params.sortOrder = sortOrder;
       
+      console.log('Fetching data types with params:', params);
       return dataTypeAPI.getAll(params);
+    },
+    {
+      onSuccess: (data) => {
+        console.log('Data types fetched successfully:', data);
+      },
+      onError: (error) => {
+        console.error('Error fetching data types:', error);
+      }
     }
   );
 
@@ -69,7 +78,7 @@ const DataTypes = () => {
     (id) => dataTypeAPI.delete(id),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('dataTypes');
+        queryClient.invalidateQueries(['dataTypes']);
         toast.success('Data type deleted successfully');
         setShowDeleteModal(false);
         setSelectedDataType(null);
@@ -80,8 +89,20 @@ const DataTypes = () => {
     }
   );
 
-  const dataTypes = dataTypesResponse?.dataTypes || [];
-  const classifications = classificationsData?.classifications || [];
+  const dataTypes = dataTypesResponse?.data?.dataTypes || dataTypesResponse?.dataTypes || [];
+  const classifications = classificationsData?.data?.classifications || classificationsData?.classifications || [];
+
+  // Debug logging
+  console.log('DataTypes component state:', {
+    dataTypesResponse,
+    dataTypes,
+    isLoading,
+    error,
+    dataTypesLength: dataTypes.length,
+    dataTypesResponseKeys: dataTypesResponse ? Object.keys(dataTypesResponse) : null,
+    dataTypesResponseType: typeof dataTypesResponse,
+    dataTypesResponseData: dataTypesResponse?.data
+  });
 
   // Helper functions
   const getRiskColor = (riskLevel) => {
@@ -288,6 +309,7 @@ const DataTypes = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
+              {console.log('Rendering dataTypes:', dataTypes)}
               {dataTypes.map((dataType) => (
                 <tr key={dataType._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -382,11 +404,12 @@ const DataTypes = () => {
       </div>
 
       {/* Pagination Info */}
-      {dataTypesResponse?.pagination && (
+      {(dataTypesResponse?.data?.pagination || dataTypesResponse?.pagination) && (
         <div className="mt-4 text-sm text-gray-600 text-center">
-          Showing {((dataTypesResponse.pagination.page - 1) * dataTypesResponse.pagination.limit) + 1} to{' '}
-          {Math.min(dataTypesResponse.pagination.page * dataTypesResponse.pagination.limit, dataTypesResponse.pagination.total)} of{' '}
-          {dataTypesResponse.pagination.total} results
+          {(() => {
+            const pagination = dataTypesResponse?.data?.pagination || dataTypesResponse?.pagination;
+            return `Showing ${((pagination.page - 1) * pagination.limit) + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} results`;
+          })()}
         </div>
       )}
 
@@ -397,7 +420,7 @@ const DataTypes = () => {
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false);
-            queryClient.invalidateQueries('dataTypes');
+            queryClient.invalidateQueries(['dataTypes']);
           }}
         />
       )}
@@ -410,7 +433,7 @@ const DataTypes = () => {
           onSuccess={() => {
             setShowEditModal(false);
             setSelectedDataType(null);
-            queryClient.invalidateQueries('dataTypes');
+            queryClient.invalidateQueries(['dataTypes']);
           }}
         />
       )}

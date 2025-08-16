@@ -95,8 +95,10 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
                 <p className="text-sm text-gray-900">{dataType.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <p className="text-sm text-gray-900">{dataType.category}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Classification</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getClassificationColor(dataType.classification)}`}>
+                  {dataType.classification}
+                </span>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
