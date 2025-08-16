@@ -16,13 +16,14 @@ const generateTestToken = (userId) => {
 // Create test tenant
 const createTestTenant = async (tenantData = {}) => {
   const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(7);
   const defaultTenant = {
     name: 'Test Tenant',
-    domain: `test${timestamp}.com`,
-    subdomain: `test${timestamp}`,
+    domain: `test${timestamp}${randomId}.com`,
+    subdomain: `test${timestamp}${randomId}`,
     status: 'active',
     contactInfo: {
-      email: `admin${timestamp}@test.com`,
+      email: `admin${timestamp}${randomId}@test.com`,
       phone: '123-456-7890'
     }
   };
@@ -38,9 +39,11 @@ const createTestUser = async (userData = {}, tenantId = null) => {
     tenantId = tenant._id;
   }
 
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(7);
   const defaultUser = {
     tenantId,
-    email: 'test@example.com',
+    email: `test${timestamp}${randomId}@example.com`,
     password: 'password123',
     firstName: 'Test',
     lastName: 'User',
