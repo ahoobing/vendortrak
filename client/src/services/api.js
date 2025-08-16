@@ -42,7 +42,11 @@ export const vendorAPI = {
   delete: (id) => api.delete(`/api/vendors/${id}`),
   addContract: (id, data) => api.post(`/api/vendors/${id}/contracts`, data),
   updateContract: (id, contractId, data) => api.put(`/api/vendors/${id}/contracts/${contractId}`, data),
+  // Data type management
+  getDataTypes: (id) => api.get(`/api/vendors/${id}/data-types`),
   addDataType: (id, data) => api.post(`/api/vendors/${id}/data-types`, data),
+  updateDataType: (id, dataTypeId, data) => api.put(`/api/vendors/${id}/data-types/${dataTypeId}`, data),
+  removeDataType: (id, dataTypeId) => api.delete(`/api/vendors/${id}/data-types/${dataTypeId}`),
   addReview: (id, data) => api.post(`/api/vendors/${id}/reviews`, data),
   getStats: (id) => api.get(`/api/vendors/${id}/stats`),
 };

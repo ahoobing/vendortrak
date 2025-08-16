@@ -90,6 +90,26 @@ const vendorSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  dataTypes: [{
+    dataTypeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'DataType',
+      required: true
+    },
+    assignedDate: {
+      type: Date,
+      default: Date.now
+    },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    notes: {
+      type: String,
+      trim: true
+    }
+  }],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -108,5 +128,6 @@ vendorSchema.index({ tenantId: 1, name: 1 });
 vendorSchema.index({ tenantId: 1, status: 1 });
 vendorSchema.index({ tenantId: 1, riskLevel: 1 });
 vendorSchema.index({ tenantId: 1, industry: 1 });
+vendorSchema.index({ tenantId: 1, 'dataTypes.dataTypeId': 1 });
 
 module.exports = mongoose.model('Vendor', vendorSchema);

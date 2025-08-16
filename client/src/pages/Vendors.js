@@ -15,11 +15,13 @@ import {
   CheckCircle,
   Clock,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Database
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import VendorForm from '../components/VendorForm';
 import VendorDetail from '../components/VendorDetail';
+import VendorDataTypes from '../components/VendorDataTypes';
 import toast from 'react-hot-toast';
 
 const Vendors = () => {
@@ -34,6 +36,8 @@ const Vendors = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDataTypesModal, setShowDataTypesModal] = useState(false);
+  const [selectedVendorForDataTypes, setSelectedVendorForDataTypes] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -332,6 +336,9 @@ const Vendors = () => {
                       Risk Level
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Data Types
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Contract Value
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -386,6 +393,12 @@ const Vendors = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center gap-1">
+                          <Database className="h-3 w-3 text-gray-400" />
+                          <span>{vendor.dataTypes?.length || 0} assigned</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {vendor.contractValue ? formatCurrency(vendor.contractValue) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -402,6 +415,16 @@ const Vendors = () => {
                             title="View Details"
                           >
                             <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedVendorForDataTypes(vendor);
+                              setShowDataTypesModal(true);
+                            }}
+                            className="text-green-600 hover:text-green-900"
+                            title="Manage Data Types"
+                          >
+                            <Database className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => {
@@ -534,6 +557,18 @@ const Vendors = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Manage Data Types Modal */}
+      {showDataTypesModal && selectedVendorForDataTypes && (
+        <VendorDataTypes
+          vendorId={selectedVendorForDataTypes._id}
+          isOpen={showDataTypesModal}
+          onClose={() => {
+            setShowDataTypesModal(false);
+            setSelectedVendorForDataTypes(null);
+          }}
+        />
       )}
     </div>
   );

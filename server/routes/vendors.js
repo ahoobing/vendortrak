@@ -54,6 +54,7 @@ router.get('/', [
       Vendor.find(filter)
         .populate('createdBy', 'firstName lastName')
         .populate('updatedBy', 'firstName lastName')
+        .populate('dataTypes.dataTypeId', 'name description classification riskLevel')
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit)),
@@ -509,6 +510,169 @@ router.get('/:id/stats', async (req, res) => {
   } catch (error) {
     console.error('Get vendor stats error:', error);
     res.status(500).json({ error: 'Failed to get vendor statistics' });
+  }
+});
+
+// Get vendor data types
+router.get('/:id/data-types', async (req, res) => {
+  try {
+    const vendor = await Vendor.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id
+    }).populate('dataTypes.dataTypeId', 'name description classification riskLevel')
+      .populate('dataTypes.assignedBy', 'firstName lastName');
+
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
+
+    res.json({ dataTypes: vendor.dataTypes });
+
+  } catch (error) {
+    console.error('Get vendor data types error:', error);
+    res.status(500).json({ error: 'Failed to get vendor data types' });
+  }
+});
+
+// Add data type to vendor
+router.post('/:id/data-types', [
+  body('dataTypeId').isMongoId().withMessage('Valid data type ID is required'),
+  body('notes').optional().trim().isLength({ max: 500 }).withMessage('Notes must be less than 500 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const vendor = await Vendor.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id
+    });
+
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
+
+    // Check if data type is already assigned
+    const existingAssignment = vendor.dataTypes.find(
+      dt => dt.dataTypeId.toString() === req.body.dataTypeId
+    );
+
+    if (existingAssignment) {
+      return res.status(400).json({ error: 'Data type is already assigned to this vendor' });
+    }
+
+    // Add the data type assignment
+    vendor.dataTypes.push({
+      dataTypeId: req.body.dataTypeId,
+      assignedBy: req.user._id,
+      notes: req.body.notes || ''
+    });
+
+    await vendor.save();
+
+    // Populate the newly added data type
+    const populatedVendor = await Vendor.findById(vendor._id)
+      .populate('dataTypes.dataTypeId', 'name description classification riskLevel')
+      .populate('dataTypes.assignedBy', 'firstName lastName');
+
+    const newAssignment = populatedVendor.dataTypes[populatedVendor.dataTypes.length - 1];
+
+    res.status(201).json({
+      message: 'Data type assigned successfully',
+      dataType: newAssignment
+    });
+
+  } catch (error) {
+    console.error('Add data type to vendor error:', error);
+    res.status(500).json({ error: 'Failed to assign data type to vendor' });
+  }
+});
+
+// Update data type assignment
+router.put('/:id/data-types/:dataTypeId', [
+  body('notes').optional().trim().isLength({ max: 500 }).withMessage('Notes must be less than 500 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const vendor = await Vendor.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id
+    });
+
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
+
+    const dataTypeAssignment = vendor.dataTypes.find(
+      dt => dt.dataTypeId.toString() === req.params.dataTypeId
+    );
+
+    if (!dataTypeAssignment) {
+      return res.status(404).json({ error: 'Data type assignment not found' });
+    }
+
+    // Update the assignment
+    if (req.body.notes !== undefined) {
+      dataTypeAssignment.notes = req.body.notes;
+    }
+
+    await vendor.save();
+
+    // Populate the updated data type
+    const populatedVendor = await Vendor.findById(vendor._id)
+      .populate('dataTypes.dataTypeId', 'name description classification riskLevel')
+      .populate('dataTypes.assignedBy', 'firstName lastName');
+
+    const updatedAssignment = populatedVendor.dataTypes.find(
+      dt => dt.dataTypeId._id.toString() === req.params.dataTypeId
+    );
+
+    res.json({
+      message: 'Data type assignment updated successfully',
+      dataType: updatedAssignment
+    });
+
+  } catch (error) {
+    console.error('Update data type assignment error:', error);
+    res.status(500).json({ error: 'Failed to update data type assignment' });
+  }
+});
+
+// Remove data type from vendor
+router.delete('/:id/data-types/:dataTypeId', async (req, res) => {
+  try {
+    const vendor = await Vendor.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id
+    });
+
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
+
+    const dataTypeIndex = vendor.dataTypes.findIndex(
+      dt => dt.dataTypeId.toString() === req.params.dataTypeId
+    );
+
+    if (dataTypeIndex === -1) {
+      return res.status(404).json({ error: 'Data type assignment not found' });
+    }
+
+    // Remove the data type assignment
+    vendor.dataTypes.splice(dataTypeIndex, 1);
+    await vendor.save();
+
+    res.json({ message: 'Data type removed from vendor successfully' });
+
+  } catch (error) {
+    console.error('Remove data type from vendor error:', error);
+    res.status(500).json({ error: 'Failed to remove data type from vendor' });
   }
 });
 
