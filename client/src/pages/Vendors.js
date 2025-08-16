@@ -53,7 +53,9 @@ const Vendors = () => {
   );
 
   // Extract vendors array from response
-  const vendors = vendorsResponse?.vendors || [];
+  const vendors = vendorsResponse?.data?.vendors || [];
+  console.log('Vendors response:', vendorsResponse);
+  console.log('Vendors array:', vendors);
 
   // Delete vendor mutation
   const deleteVendorMutation = useMutation(

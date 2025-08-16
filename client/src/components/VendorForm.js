@@ -47,12 +47,13 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
   const createVendorMutation = useMutation(
     (data) => vendorAPI.create(data),
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries('vendors');
+      onSuccess: (response) => {
+        queryClient.refetchQueries('vendors');
         toast.success('Vendor created successfully');
         onSuccess?.();
       },
       onError: (error) => {
+        console.error('Vendor creation error:', error);
         toast.error(error.response?.data?.error || 'Failed to create vendor');
       },
     }
@@ -76,9 +77,6 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
     setIsSubmitting(true);
     
     try {
-      console.log('Current user:', user);
-      console.log('Form data before processing:', data);
-      
       // Set default values if not provided
       if (!data.status) data.status = 'active';
       if (!data.riskLevel) data.riskLevel = 'medium';
@@ -107,8 +105,6 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
       if (!data.primaryContactEmail || data.primaryContactEmail.trim() === '') delete data.primaryContactEmail;
       if (!data.primaryContactPhone || data.primaryContactPhone.trim() === '') delete data.primaryContactPhone;
       if (!data.notes || data.notes.trim() === '') delete data.notes;
-
-      console.log('Form data after processing:', data);
 
       if (vendor) {
         await updateVendorMutation.mutateAsync(data);

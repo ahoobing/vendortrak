@@ -110,11 +110,8 @@ router.post('/', requireManager, [
   body('riskLevel').optional().isIn(['low', 'medium', 'high'])
 ], async (req, res) => {
   try {
-    console.log('Vendor creation request body:', req.body);
-    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
