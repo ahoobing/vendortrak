@@ -91,17 +91,17 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Name</span>
                 <p className="text-sm text-gray-900">{dataType.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Classification</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Classification</span>
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getClassificationColor(dataType.classification)}`}>
                   {dataType.classification}
                 </span>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Description</span>
                 <p className="text-sm text-gray-900">{dataType.description}</p>
               </div>
             </div>
@@ -112,13 +112,13 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Classification & Risk</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Classification</label>
+                <span className="block text-sm font-medium text-gray-700 mb-2">Classification</span>
                 <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getClassificationColor(dataType.classification)}`}>
                   {dataType.classification}
                 </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Risk Level</label>
+                <span className="block text-sm font-medium text-gray-700 mb-2">Risk Level</span>
                 <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getRiskColor(dataType.riskLevel)}`}>
                   {dataType.riskLevel}
                 </span>
@@ -149,7 +149,7 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Retention & Status</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Retention Period</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Retention Period</span>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-900">
@@ -158,7 +158,7 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Status</span>
                 <div className="flex items-center">
                   {dataType.isActive ? (
                     <>
@@ -181,7 +181,7 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Audit Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Created By</span>
                 <div className="flex items-center">
                   <User className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-900">
@@ -190,7 +190,7 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
+                <span className="block text-sm font-medium text-gray-700 mb-1">Created Date</span>
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                   <span className="text-sm text-gray-900">
@@ -200,7 +200,7 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
               </div>
               {dataType.updatedBy && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated By</label>
+                  <span className="block text-sm font-medium text-gray-700 mb-1">Last Updated By</span>
                   <div className="flex items-center">
                     <User className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm text-gray-900">
@@ -211,7 +211,7 @@ const DataTypeDetail = ({ isOpen, onClose, dataType, onEdit }) => {
               )}
               {dataType.updatedAt && dataType.updatedAt !== dataType.createdAt && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
+                  <span className="block text-sm font-medium text-gray-700 mb-1">Last Updated</span>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm text-gray-900">

@@ -318,10 +318,11 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
 
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="dataTypeSelect" className="block text-sm font-medium text-gray-700 mb-2">
                     Select Data Type *
                   </label>
                   <select
+                    id="dataTypeSelect"
                     value={newDataTypeId}
                     onChange={(e) => setNewDataTypeId(e.target.value)}
                     disabled={allDataTypesLoading}
@@ -352,10 +353,11 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="dataTypeNotes" className="block text-sm font-medium text-gray-700 mb-2">
                     Notes (Optional)
                   </label>
                   <textarea
+                    id="dataTypeNotes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
@@ -400,17 +402,18 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
 
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <span className="block text-sm font-medium text-gray-700 mb-2">
                     Data Type
-                  </label>
+                  </span>
                   <p className="text-sm text-gray-900">{selectedDataType.dataTypeId.name}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="editDataTypeNotes" className="block text-sm font-medium text-gray-700 mb-2">
                     Notes
                   </label>
                   <textarea
+                    id="editDataTypeNotes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}

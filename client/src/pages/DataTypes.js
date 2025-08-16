@@ -231,8 +231,9 @@ const DataTypes = () => {
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Classification Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Classification</label>
+              <label htmlFor="classificationFilter" className="block text-sm font-medium text-gray-700 mb-1">Classification</label>
               <select
+                id="classificationFilter"
                 value={classificationFilter}
                 onChange={(e) => setClassificationFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -248,8 +249,9 @@ const DataTypes = () => {
 
             {/* Risk Level Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+              <label htmlFor="riskFilter" className="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
               <select
+                id="riskFilter"
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -266,8 +268,9 @@ const DataTypes = () => {
 
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select
+                id="statusFilter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"

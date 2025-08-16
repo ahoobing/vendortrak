@@ -208,10 +208,11 @@ const Vendors = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">
                     Status
                   </label>
                   <select
+                    id="statusFilter"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="input"
@@ -226,10 +227,11 @@ const Vendors = () => {
 
                 {/* Risk Level Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="riskFilter" className="block text-sm font-medium text-gray-700 mb-1">
                     Risk Level
                   </label>
                   <select
+                    id="riskFilter"
                     value={riskFilter}
                     onChange={(e) => setRiskFilter(e.target.value)}
                     className="input"
@@ -243,10 +245,11 @@ const Vendors = () => {
 
                 {/* Sort Options */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-1">
                     Sort By
                   </label>
                   <select
+                    id="sortBy"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="input"
@@ -262,9 +265,9 @@ const Vendors = () => {
 
               {/* Sort Order */}
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <span className="block text-sm font-medium text-gray-700 mb-1">
                   Sort Order
-                </label>
+                </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSortOrder('asc')}

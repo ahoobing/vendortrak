@@ -189,10 +189,11 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="dataTypeName" className="block text-sm font-medium text-gray-700 mb-2">
               Name *
             </label>
             <input
+              id="dataTypeName"
               type="text"
               {...register('name', {
                 required: 'Name is required',
@@ -210,10 +211,11 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="dataTypeDescription" className="block text-sm font-medium text-gray-700 mb-2">
               Description *
             </label>
             <textarea
+              id="dataTypeDescription"
               {...register('description', {
                 required: 'Description is required',
                 maxLength: { value: 500, message: 'Description must be less than 500 characters' }
@@ -231,10 +233,11 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
 
           {/* Classification */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="dataTypeClassification" className="block text-sm font-medium text-gray-700 mb-2">
               Classification *
             </label>
             <select
+              id="dataTypeClassification"
               {...register('classification', { required: 'Classification is required' })}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                 errors.classification ? 'border-red-500' : 'border-gray-300'
@@ -254,10 +257,11 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
           {/* Risk Level and Retention Period */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="dataTypeRiskLevel" className="block text-sm font-medium text-gray-700 mb-2">
                 Risk Level *
               </label>
               <select
+                id="dataTypeRiskLevel"
                 {...register('riskLevel', { required: 'Risk level is required' })}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                   errors.riskLevel ? 'border-red-500' : 'border-gray-300'
@@ -274,10 +278,11 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="dataTypeRetentionPeriod" className="block text-sm font-medium text-gray-700 mb-2">
                 Retention Period (months)
               </label>
               <input
+                id="dataTypeRetentionPeriod"
                 type="number"
                 {...register('retentionPeriod', {
                   min: { value: 0, message: 'Retention period must be non-negative' }
@@ -299,9 +304,9 @@ const DataTypeForm = ({ isOpen, onClose, dataType, onSuccess }) => {
 
           {/* Compliance Requirements */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <span className="block text-sm font-medium text-gray-700 mb-2">
               Compliance Requirements
-            </label>
+            </span>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {complianceOptions.map((requirement) => (
                 <label key={requirement} className="flex items-center">
