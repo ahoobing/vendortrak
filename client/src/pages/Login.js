@@ -37,9 +37,9 @@ const Login = () => {
   };
 
   // Only clear error when form is submitted, not when typing
-  const handleInputChange = () => {
-    // Don't clear error on input change - let user see the error until they submit or dismiss
-  };
+  // const handleInputChange = () => {
+  //   // Don't clear error on input change - let user see the error until they submit or dismiss
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
