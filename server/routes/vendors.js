@@ -204,8 +204,7 @@ router.get('/:id', async (req, res) => {
       tenantId: req.tenant._id
     })
     .populate('createdBy', 'firstName lastName')
-    .populate('updatedBy', 'firstName lastName')
-    .populate('performance.reviews.reviewer', 'firstName lastName');
+    .populate('updatedBy', 'firstName lastName');
 
     if (!vendor) {
       return res.status(404).json({ error: 'Vendor not found' });

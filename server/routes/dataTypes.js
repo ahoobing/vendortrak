@@ -378,7 +378,7 @@ router.delete('/:id', [
     const Vendor = require('../models/Vendor');
     const vendorsUsingDataType = await Vendor.findOne({
       tenantId: req.tenant._id,
-      dataTypes: req.params.id
+      'dataTypes.dataTypeId': req.params.id
     });
 
     if (vendorsUsingDataType) {
