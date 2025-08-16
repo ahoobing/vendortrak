@@ -24,21 +24,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting - temporarily disabled for auth routes
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: false,
-  legacyHeaders: false
-});
-
-// Apply rate limiting to all routes except auth
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/auth')) {
-    return next();
-  }
-  return limiter(req, res, next);
-});
+// Rate limiting temporarily disabled to fix X-Forwarded-For issues
+// TODO: Re-enable with proper configuration when behind a proxy
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
