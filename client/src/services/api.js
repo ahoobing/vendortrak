@@ -78,3 +78,15 @@ export const authAPI = {
   updateProfile: (data) => api.put('/api/auth/profile', data),
   changePassword: (data) => api.put('/api/auth/change-password', data),
 };
+
+// Data Type API functions
+export const dataTypeAPI = {
+  getAll: (params = {}) => api.get('/api/data-types', { params }),
+  getById: (id) => api.get(`/api/data-types/${id}`),
+  create: (data) => api.post('/api/data-types', data),
+  update: (id, data) => api.put(`/api/data-types/${id}`, data),
+  delete: (id) => api.delete(`/api/data-types/${id}`),
+  getClassifications: () => api.get('/api/data-types/classifications'),
+  getCategories: () => api.get('/api/data-types/categories'),
+  getStats: () => api.get('/api/data-types/stats')
+};

@@ -11,7 +11,8 @@ import {
   X,
   LogOut,
   ChevronDown,
-  Network
+  Network,
+  Database
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -25,6 +26,7 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Vendors', href: '/vendors', icon: Building2 },
     { name: 'Vendor Graph', href: '/vendor-graph', icon: Network },
+    { name: 'Data Types', href: '/data-types', icon: Database },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];

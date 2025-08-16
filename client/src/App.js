@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
 import VendorGraph from './pages/VendorGraph';
+import DataTypes from './pages/DataTypes';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -35,10 +36,11 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/vendors" element={<Vendors />} />
-        <Route path="/vendors/:id" element={<VendorDetail />} />
-        <Route path="/vendor-graph" element={<VendorGraph />} />
-        <Route path="/users" element={<Users />} />
+                      <Route path="/vendors" element={<Vendors />} />
+              <Route path="/vendors/:id" element={<VendorDetail />} />
+              <Route path="/vendor-graph" element={<VendorGraph />} />
+              <Route path="/data-types" element={<DataTypes />} />
+              <Route path="/users" element={<Users />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
