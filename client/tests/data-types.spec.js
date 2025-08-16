@@ -59,7 +59,7 @@ test.describe('Data Types Page', () => {
             page: 1,
             limit: 10
           }
-        }
+        })
       });
     });
 
@@ -216,7 +216,7 @@ test.describe('Data Types Page', () => {
             page: parseInt(page),
             limit: 10
           }
-        }
+        })
       });
     });
 

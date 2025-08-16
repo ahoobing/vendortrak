@@ -69,7 +69,7 @@ test.describe('Vendor Graph Page', () => {
               }
             ]
           }
-        }
+        })
       });
     });
 

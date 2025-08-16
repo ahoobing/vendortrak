@@ -65,7 +65,7 @@ test.describe('Vendors Page', () => {
             page: 1,
             limit: 10
           }
-        }
+        })
       });
     });
 
@@ -235,7 +235,7 @@ test.describe('Vendors Page', () => {
             page: parseInt(page),
             limit: 10
           }
-        }
+        })
       });
     });
 
