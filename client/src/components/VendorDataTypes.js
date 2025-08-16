@@ -43,11 +43,20 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
     error: allDataTypesError
   } = useQuery(
     ['allDataTypes', 'vendor-assignment'],
-    () => dataTypeAPI.getAll({ limit: 1000 }),
+    () => {
+      console.log('VendorDataTypes - Fetching available data types...');
+      return dataTypeAPI.getAvailable();
+    },
     {
       enabled: isOpen, // Always fetch when modal is open, not just when add modal is shown
       staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000 // 10 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      onError: (error) => {
+        console.error('VendorDataTypes - Error fetching data types:', error);
+        console.error('VendorDataTypes - Error response:', error.response);
+        console.error('VendorDataTypes - Error status:', error.response?.status);
+        console.error('VendorDataTypes - Error data:', error.response?.data);
+      }
     }
   );
 

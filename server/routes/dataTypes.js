@@ -20,6 +20,21 @@ router.get('/classifications', (req, res) => {
   res.json({ classifications });
 });
 
+// GET /api/data-types/available - Get all available data types for dropdown (public endpoint)
+router.get('/available', async (req, res) => {
+  try {
+    const dataTypes = await DataType.find({ isActive: true })
+      .select('_id name description classification riskLevel')
+      .sort({ name: 1 })
+      .lean(); // Use lean() to get plain JavaScript objects without virtuals
+    
+    res.json({ dataTypes });
+  } catch (error) {
+    console.error('Error fetching available data types:', error);
+    res.status(500).json({ error: 'Failed to fetch available data types' });
+  }
+});
+
 // Apply authentication to all other routes
 router.use(authenticateToken);
 
