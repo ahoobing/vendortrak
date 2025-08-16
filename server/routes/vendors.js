@@ -78,6 +78,80 @@ router.get('/', [
   }
 });
 
+// Search for vendor information online
+router.get('/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({ error: 'Search query must be at least 2 characters' });
+    }
+
+    // In a real implementation, you would integrate with external APIs like:
+    // - Clearbit API for company data
+    // - Company House API (UK)
+    // - OpenCorporates API
+    // - Crunchbase API
+    // - LinkedIn Company API
+    
+    // For demo purposes, we'll return mock data
+    // In production, you would make actual API calls to these services
+    
+    const mockResults = [
+      {
+        id: 1,
+        name: `${q} Inc.`,
+        website: `https://www.${q.toLowerCase().replace(/\s+/g, '')}.com`,
+        email: `contact@${q.toLowerCase().replace(/\s+/g, '')}.com`,
+        phone: '+1 (555) 123-4567',
+        address: '123 Business Ave, Suite 100',
+        city: 'San Francisco',
+        state: 'CA',
+        zipCode: '94105',
+        country: 'United States',
+        industry: 'Technology',
+        description: `${q} is a leading technology company specializing in innovative solutions.`,
+        primaryContact: 'John Smith',
+        primaryContactEmail: 'john.smith@' + q.toLowerCase().replace(/\s+/g, '') + '.com',
+        primaryContactPhone: '+1 (555) 123-4568',
+        confidence: 0.95
+      },
+      {
+        id: 2,
+        name: `${q} Technologies`,
+        website: `https://www.${q.toLowerCase().replace(/\s+/g, '')}tech.com`,
+        email: `info@${q.toLowerCase().replace(/\s+/g, '')}tech.com`,
+        phone: '+1 (555) 987-6543',
+        address: '456 Innovation Blvd',
+        city: 'Austin',
+        state: 'TX',
+        zipCode: '73301',
+        country: 'United States',
+        industry: 'Software Development',
+        description: `${q} Technologies provides cutting-edge software solutions for modern businesses.`,
+        primaryContact: 'Sarah Johnson',
+        primaryContactEmail: 'sarah.johnson@' + q.toLowerCase().replace(/\s+/g, '') + 'tech.com',
+        primaryContactPhone: '+1 (555) 987-6544',
+        confidence: 0.87
+      }
+    ];
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    res.json({
+      results: mockResults,
+      query: q,
+      total: mockResults.length,
+      message: 'Demo data - in production, this would search real company databases'
+    });
+
+  } catch (error) {
+    console.error('Error searching vendors:', error);
+    res.status(500).json({ error: 'Failed to search vendors' });
+  }
+});
+
 // Get vendor by ID
 router.get('/:id', async (req, res) => {
   try {
