@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { vendorAPI } from '../services/api';
 import ForceGraph2D from 'react-force-graph-2d';
@@ -7,11 +7,19 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Info
+  Info,
+  Edit3,
+  Save,
+  X,
+  Move,
+  Database,
+  Building2
 } from 'lucide-react';
 
 const VendorGraph = () => {
   const [selectedNode, setSelectedNode] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [nodePositions, setNodePositions] = useState({});
   const [filters, setFilters] = useState({
     showDataTypes: true,
     showIndustries: true,
@@ -21,8 +29,11 @@ const VendorGraph = () => {
   const [graphSettings, setGraphSettings] = useState({
     enableAnimation: true,
     linkDistance: 100,
-    nodeStrength: -30
+    nodeStrength: -30,
+    enableDrag: true
   });
+
+  const graphRef = useRef();
 
   // Fetch vendor data
   const { data: vendorsData, isLoading, error } = useQuery('vendors', () => 
@@ -47,17 +58,18 @@ const VendorGraph = () => {
     const links = [];
     const nodeMap = new Map();
 
-    // Add vendor nodes
+    // Add vendor nodes as squares
     vendors.forEach((vendor, index) => {
       const vendorNode = {
         id: `vendor-${vendor._id}`,
         name: vendor.name,
         type: 'vendor',
         vendor: vendor,
-        size: Math.max(20, Math.min(50, (vendor.contractValue || 0) / 10000)),
+        size: Math.max(30, Math.min(60, (vendor.contractValue || 0) / 10000)),
         color: getRiskColor(vendor.riskLevel),
-        x: Math.cos(index * 2 * Math.PI / vendors.length) * 200,
-        y: Math.sin(index * 2 * Math.PI / vendors.length) * 200
+        x: nodePositions[`vendor-${vendor._id}`]?.x || Math.cos(index * 2 * Math.PI / vendors.length) * 300,
+        y: nodePositions[`vendor-${vendor._id}`]?.y || Math.sin(index * 2 * Math.PI / vendors.length) * 300,
+        shape: 'square'
       };
       nodes.push(vendorNode);
       nodeMap.set(vendorNode.id, vendorNode);
@@ -70,10 +82,11 @@ const VendorGraph = () => {
             id: industryId,
             name: vendor.industry,
             type: 'industry',
-            size: 15,
+            size: 20,
             color: '#6366f1',
-            x: Math.random() * 400 - 200,
-            y: Math.random() * 400 - 200
+            x: nodePositions[industryId]?.x || Math.random() * 600 - 300,
+            y: nodePositions[industryId]?.y || Math.random() * 600 - 300,
+            shape: 'circle'
           };
           nodes.push(industryNode);
           nodeMap.set(industryId, industryNode);
@@ -82,23 +95,25 @@ const VendorGraph = () => {
           source: vendorNode.id,
           target: industryId,
           type: 'industry',
-          color: '#6366f1'
+          color: '#6366f1',
+          label: 'Processes'
         });
       }
 
       // Add data types if available
       if (filters.showDataTypes && vendor.dataTypes && Array.isArray(vendor.dataTypes)) {
         vendor.dataTypes.forEach(dataType => {
-          const dataTypeId = `datatype-${dataType}`;
+          const dataTypeId = `datatype-${dataType.dataTypeId?._id || dataType}`;
           if (!nodeMap.has(dataTypeId)) {
             const dataTypeNode = {
               id: dataTypeId,
-              name: dataType,
+              name: dataType.dataTypeId?.name || dataType,
               type: 'datatype',
-              size: 12,
+              size: 15,
               color: '#10b981',
-              x: Math.random() * 400 - 200,
-              y: Math.random() * 400 - 200
+              x: nodePositions[dataTypeId]?.x || Math.random() * 600 - 300,
+              y: nodePositions[dataTypeId]?.y || Math.random() * 600 - 300,
+              shape: 'diamond'
             };
             nodes.push(dataTypeNode);
             nodeMap.set(dataTypeId, dataTypeNode);
@@ -107,7 +122,8 @@ const VendorGraph = () => {
             source: vendorNode.id,
             target: dataTypeId,
             type: 'datatype',
-            color: '#10b981'
+            color: '#10b981',
+            label: 'Processes Data'
           });
         });
       }
@@ -120,10 +136,11 @@ const VendorGraph = () => {
             id: riskId,
             name: `${vendor.riskLevel.toUpperCase()} Risk`,
             type: 'risk',
-            size: 18,
+            size: 25,
             color: getRiskColor(vendor.riskLevel),
-            x: Math.random() * 400 - 200,
-            y: Math.random() * 400 - 200
+            x: nodePositions[riskId]?.x || Math.random() * 600 - 300,
+            y: nodePositions[riskId]?.y || Math.random() * 600 - 300,
+            shape: 'triangle'
           };
           nodes.push(riskNode);
           nodeMap.set(riskId, riskNode);
@@ -132,33 +149,81 @@ const VendorGraph = () => {
           source: vendorNode.id,
           target: riskId,
           type: 'risk',
-          color: getRiskColor(vendor.riskLevel)
+          color: getRiskColor(vendor.riskLevel),
+          label: 'Risk Level'
         });
       }
     });
 
     return { nodes, links };
-  }, [vendorsData, filters]);
+  }, [vendorsData, filters, nodePositions]);
 
   const handleNodeClick = useCallback((node) => {
     setSelectedNode(node);
   }, []);
 
-  const handleNodeHover = useCallback((node) => {
-    // Handle node hover if needed in the future
-  }, []);
+  const handleNodeDrag = useCallback((node, translate) => {
+    if (editMode) {
+      setNodePositions(prev => ({
+        ...prev,
+        [node.id]: {
+          x: node.x + translate.x,
+          y: node.y + translate.y
+        }
+      }));
+    }
+  }, [editMode]);
+
+  const handleNodeDragEnd = useCallback((node) => {
+    if (editMode) {
+      setNodePositions(prev => ({
+        ...prev,
+        [node.id]: {
+          x: node.x,
+          y: node.y
+        }
+      }));
+    }
+  }, [editMode]);
 
   const handleZoomIn = useCallback(() => {
-    // Implementation for zoom in
+    if (graphRef.current) {
+      graphRef.current.zoomIn();
+    }
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    // Implementation for zoom out
+    if (graphRef.current) {
+      graphRef.current.zoomOut();
+    }
   }, []);
 
   const handleReset = useCallback(() => {
     setSelectedNode(null);
+    setNodePositions({});
+    if (graphRef.current) {
+      graphRef.current.centerAt(0, 0, 1000);
+      graphRef.current.zoom(1, 1000);
+    }
   }, []);
+
+  const saveLayout = useCallback(() => {
+    // Save the current layout to localStorage
+    localStorage.setItem('vendorGraphLayout', JSON.stringify(nodePositions));
+    setEditMode(false);
+  }, [nodePositions]);
+
+  const loadLayout = useCallback(() => {
+    const savedLayout = localStorage.getItem('vendorGraphLayout');
+    if (savedLayout) {
+      setNodePositions(JSON.parse(savedLayout));
+    }
+  }, []);
+
+  // Load saved layout on component mount
+  React.useEffect(() => {
+    loadLayout();
+  }, [loadLayout]);
 
   if (isLoading) {
     return (
@@ -182,10 +247,42 @@ const VendorGraph = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Vendor Relationship Graph</h1>
-        <p className="text-gray-600">
-          Interactive visualization showing vendor relationships, data processing, and industry connections
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Vendor Data Flow Graph</h1>
+            <p className="text-gray-600">
+              Interactive visualization showing vendor relationships and data processing flows
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {editMode ? (
+              <>
+                <button
+                  onClick={saveLayout}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Layout
+                </button>
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setEditMode(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Layout
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -301,28 +398,26 @@ const VendorGraph = () => {
             <h3 className="text-lg font-semibold mb-4">Legend</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                <span>Vendors</span>
+                <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                <span>Vendors (Squares)</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
-                <span>Industries</span>
+                <span>Industries (Circles)</span>
               </div>
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                <span>Data Types</span>
+                <div className="w-3 h-3 bg-green-500 transform rotate-45 mr-2" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
+                <span>Data Types (Diamonds)</span>
               </div>
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                <span>High Risk</span>
+                <div className="w-3 h-3 bg-red-500 transform rotate-45 mr-2" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
+                <span>Risk Levels (Triangles)</span>
               </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                <span>Medium Risk</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
-                <span>Low Risk</span>
+              <div className="mt-3 pt-3 border-t">
+                <div className="flex items-center text-xs text-gray-500">
+                  <Move className="h-3 w-3 mr-1" />
+                  {editMode ? 'Drag nodes to reposition' : 'Click Edit Layout to move nodes'}
+                </div>
               </div>
             </div>
           </div>
@@ -333,15 +428,16 @@ const VendorGraph = () => {
           <div className="bg-white rounded-lg shadow">
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Vendor Network</h3>
+                <h3 className="text-lg font-semibold">Vendor Data Flow Network</h3>
                 <div className="text-sm text-gray-500">
-                  {processedGraphData.nodes.length} nodes, {processedGraphData.links.length} connections
+                  {processedGraphData.nodes.length} nodes, {processedGraphData.links.length} data flows
                 </div>
               </div>
             </div>
             
             <div className="relative h-96">
               <ForceGraph2D
+                ref={graphRef}
                 graphData={processedGraphData}
                 nodeLabel={(node) => `${node.name} (${node.type})`}
                 nodeColor={(node) => node.color}
@@ -351,7 +447,8 @@ const VendorGraph = () => {
                 linkDirectionalParticles={graphSettings.enableAnimation ? 2 : 0}
                 linkDirectionalParticleSpeed={0.005}
                 onNodeClick={handleNodeClick}
-                onNodeHover={handleNodeHover}
+                onNodeDrag={handleNodeDrag}
+                onNodeDragEnd={handleNodeDragEnd}
                 cooldownTicks={graphSettings.enableAnimation ? 100 : 0}
                 d3AlphaDecay={graphSettings.enableAnimation ? 0.02 : 0}
                 d3VelocityDecay={graphSettings.enableAnimation ? 0.4 : 0}
@@ -364,15 +461,76 @@ const VendorGraph = () => {
                   const textWidth = ctx.measureText(label).width;
                   const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
 
-                  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                  // Draw node shape based on type
+                  ctx.fillStyle = node.color;
+                  ctx.strokeStyle = editMode ? '#3b82f6' : '#374151';
+                  ctx.lineWidth = editMode ? 2 : 1;
+
+                  if (node.shape === 'square') {
+                    const size = node.size / globalScale;
+                    ctx.fillRect(node.x - size/2, node.y - size/2, size, size);
+                    ctx.strokeRect(node.x - size/2, node.y - size/2, size, size);
+                  } else if (node.shape === 'diamond') {
+                    const size = node.size / globalScale;
+                    ctx.beginPath();
+                    ctx.moveTo(node.x, node.y - size/2);
+                    ctx.lineTo(node.x + size/2, node.y);
+                    ctx.lineTo(node.x, node.y + size/2);
+                    ctx.lineTo(node.x - size/2, node.y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                  } else if (node.shape === 'triangle') {
+                    const size = node.size / globalScale;
+                    ctx.beginPath();
+                    ctx.moveTo(node.x, node.y - size/2);
+                    ctx.lineTo(node.x - size/2, node.y + size/2);
+                    ctx.lineTo(node.x + size/2, node.y + size/2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                  } else {
+                    // Circle (default)
+                    const size = node.size / globalScale;
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                  }
+
+                  // Draw label background
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                   ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
 
+                  // Draw label text
                   ctx.textAlign = 'center';
                   ctx.textBaseline = 'middle';
-                  ctx.fillStyle = node.color;
+                  ctx.fillStyle = '#374151';
                   ctx.fillText(label, node.x, node.y);
 
                   node.__bckgDimensions = bckgDimensions;
+                }}
+                linkCanvasObject={(link, ctx, globalScale) => {
+                  // Draw link label
+                  if (link.label) {
+                    const fontSize = 10/globalScale;
+                    ctx.font = `${fontSize}px Sans-Serif`;
+                    ctx.fillStyle = link.color;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    const midX = (link.source.x + link.target.x) / 2;
+                    const midY = (link.source.y + link.target.y) / 2;
+                    
+                    // Background for text
+                    const textWidth = ctx.measureText(link.label).width;
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fillRect(midX - textWidth/2 - 2, midY - fontSize/2 - 1, textWidth + 4, fontSize + 2);
+                    
+                    // Text
+                    ctx.fillStyle = link.color;
+                    ctx.fillText(link.label, midX, midY);
+                  }
                 }}
               />
             </div>
@@ -383,7 +541,9 @@ const VendorGraph = () => {
             <div className="mt-4 bg-white rounded-lg shadow p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold flex items-center">
-                  <Info className="h-5 w-5 mr-2" />
+                  {selectedNode.type === 'vendor' ? <Building2 className="h-5 w-5 mr-2" /> : 
+                   selectedNode.type === 'datatype' ? <Database className="h-5 w-5 mr-2" /> :
+                   <Info className="h-5 w-5 mr-2" />}
                   {selectedNode.name}
                 </h3>
                 <button
@@ -417,7 +577,7 @@ const VendorGraph = () => {
                       <div className="mt-1 flex flex-wrap gap-1">
                         {selectedNode.vendor.dataTypes.map((type, index) => (
                           <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                            {type}
+                            {type.dataTypeId?.name || type}
                           </span>
                         ))}
                       </div>
