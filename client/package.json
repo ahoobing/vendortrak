@@ -35,6 +35,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:single": "playwright test --grep",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
