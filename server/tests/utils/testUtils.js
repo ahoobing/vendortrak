@@ -85,19 +85,27 @@ const createTestVendor = async (vendorData = {}, tenantId = null, userId = null)
 };
 
 // Create test data type
-const createTestDataType = async (dataTypeData = {}) => {
+const createTestDataType = async (dataTypeData = {}, tenantId = null, userId = null) => {
+  if (!tenantId) {
+    const tenant = await createTestTenant();
+    tenantId = tenant._id;
+  }
+
+  if (!userId) {
+    const user = await createTestUser({}, tenantId);
+    userId = user._id;
+  }
+
   const defaultDataType = {
+    tenantId,
     name: 'Test Data Type',
-    description: 'Test description',
-    category: 'General',
-    fields: [
-      {
-        name: 'field1',
-        type: 'string',
-        required: true,
-        label: 'Field 1'
-      }
-    ]
+    description: 'Test data type description',
+    classification: 'Personal Data',
+    riskLevel: 'Medium',
+    complianceRequirements: ['GDPR'],
+    retentionPeriod: 12,
+    isActive: true,
+    createdBy: userId
   };
 
   const dataType = new DataType({ ...defaultDataType, ...dataTypeData });

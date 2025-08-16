@@ -18,17 +18,32 @@ beforeAll(async () => {
 
 // Clean up after each test
 afterEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    const collection = collections[key];
-    await collection.deleteMany();
+  if (mongoose.connection.readyState === 1) {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      const collection = collections[key];
+      try {
+        await collection.deleteMany({});
+      } catch (error) {
+        // Ignore cleanup errors
+        console.warn(`Cleanup warning for collection ${key}:`, error.message);
+      }
+    }
   }
 });
 
 // Cleanup after all tests
 afterAll(async () => {
-  await mongoose.connection.close();
-  await mongod.stop();
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+    if (mongod) {
+      await mongod.stop();
+    }
+  } catch (error) {
+    console.warn('Cleanup warning:', error.message);
+  }
 });
 
 // Set test environment variables
