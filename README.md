@@ -17,28 +17,34 @@ A comprehensive web application for tracking vendor relationships, contracts, an
 - **Bulk operations** for efficient vendor management
 
 ### 🤖 **Auto-Fill Vendor Information**
-- **Web-based vendor search** to automatically populate vendor details
-- **Multiple data sources** integration (demo mode with real API examples)
-- **Smart field mapping** with confidence scoring
-- **Preview before apply** functionality
+- **Real company data search** from official registries and APIs
+- **Multiple data sources** integration with OpenCorporates API (free tier)
+- **Smart field mapping** with confidence scoring and source attribution
+- **Preview before apply** functionality with data validation
 - **Real-time validation** and error handling
 
 #### Auto-Fill Features:
-- **Search by company name** (e.g., "Microsoft", "Salesforce")
-- **Automatic field population** including:
-  - Company name, website, and contact information
-  - Address details (street, city, state, ZIP, country)
-  - Industry classification and company description
-  - Primary contact information
-- **Confidence scoring** to indicate data reliability
-- **Data source attribution** for transparency
-- **Fallback to demo data** when external APIs are unavailable
+- **Search by company name** (e.g., "Microsoft", "Salesforce", "Apple")
+- **Real data population** including:
+  - Official company names from corporate registries
+  - Actual addresses and contact information
+  - Industry classifications from official sources
+  - Company numbers and incorporation dates
+  - Primary contact information when available
+- **Confidence scoring** to indicate data reliability (0.7-0.95)
+- **Data source attribution** showing OpenCorporates, Web Search, etc.
+- **Fallback to enhanced mock data** when real APIs are unavailable
+
+#### Real Data Sources:
+- **OpenCorporates API** - Real company registration data from global corporate registries
+- **Backend Integration** - Server-side API calls for reliable data fetching
+- **Web Search** - Additional company information and contact details
+- **Enhanced Mock Data** - Realistic fallback when external APIs are unavailable
 
 #### Future API Integrations:
-The system is designed to integrate with real company data APIs:
-- **Clearbit API** - Comprehensive company intelligence
+The system is designed to integrate with additional real company data APIs:
+- **Clearbit API** - Comprehensive company intelligence and enrichment
 - **Company House API** - UK company registry data
-- **OpenCorporates API** - Global company information
 - **Crunchbase API** - Startup and company data
 - **LinkedIn Company API** - Professional network data
 

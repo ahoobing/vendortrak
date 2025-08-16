@@ -94,10 +94,47 @@ router.get('/search', async (req, res) => {
     // - Crunchbase API
     // - LinkedIn Company API
     
-    // For demo purposes, we'll return mock data
-    // In production, you would make actual API calls to these services
-    
-    const mockResults = [
+    // Try to get real data from OpenCorporates API (free tier or with API key)
+    let realResults = [];
+    try {
+      const apiKey = process.env.OPENCORPORATES_API_KEY;
+      const apiUrl = apiKey 
+        ? `https://api.opencorporates.com/companies/search?q=${encodeURIComponent(q)}&api_token=${apiKey}`
+        : `https://api.opencorporates.com/companies/search?q=${encodeURIComponent(q)}`;
+      
+      const openCorporatesResponse = await fetch(apiUrl);
+      if (openCorporatesResponse.ok) {
+        const openCorporatesData = await openCorporatesResponse.json();
+        if (openCorporatesData.results && openCorporatesData.results.companies) {
+          realResults = openCorporatesData.results.companies.slice(0, 5).map(company => ({
+            id: `opencorp-${company.company.id}`,
+            name: company.company.name,
+            website: company.company.homepage_url || '',
+            email: '', // OpenCorporates doesn't provide email
+            phone: company.company.phone_number || '',
+            address: company.company.registered_address_in_full || '',
+            city: company.company.registered_address?.locality || '',
+            state: company.company.registered_address?.region || '',
+            zipCode: company.company.registered_address?.postal_code || '',
+            country: company.company.registered_address?.country || company.company.jurisdiction_code || '',
+            industry: company.company.industry_codes?.[0]?.industry_code?.name || 'Unknown',
+            description: `${company.company.name} - ${company.company.company_type || 'Registered Company'}`,
+            primaryContact: '',
+            primaryContactEmail: '',
+            primaryContactPhone: company.company.phone_number || '',
+            confidence: 0.85,
+            source: 'OpenCorporates',
+            incorporationDate: company.company.incorporation_date,
+            companyNumber: company.company.company_number
+          }));
+        }
+      }
+    } catch (error) {
+      console.log('OpenCorporates API call failed, using fallback data');
+    }
+
+    // Fallback mock data if no real results found
+    const mockResults = realResults.length > 0 ? [] : [
       {
         id: 1,
         name: `${q} Inc.`,
@@ -114,7 +151,8 @@ router.get('/search', async (req, res) => {
         primaryContact: 'John Smith',
         primaryContactEmail: 'john.smith@' + q.toLowerCase().replace(/\s+/g, '') + '.com',
         primaryContactPhone: '+1 (555) 123-4568',
-        confidence: 0.95
+        confidence: 0.95,
+        source: 'Mock Data'
       },
       {
         id: 2,
@@ -132,18 +170,23 @@ router.get('/search', async (req, res) => {
         primaryContact: 'Sarah Johnson',
         primaryContactEmail: 'sarah.johnson@' + q.toLowerCase().replace(/\s+/g, '') + 'tech.com',
         primaryContactPhone: '+1 (555) 987-6544',
-        confidence: 0.87
+        confidence: 0.87,
+        source: 'Mock Data'
       }
     ];
+
+    const allResults = [...realResults, ...mockResults];
 
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     res.json({
-      results: mockResults,
+      results: allResults,
       query: q,
-      total: mockResults.length,
-      message: 'Demo data - in production, this would search real company databases'
+      total: allResults.length,
+      message: realResults.length > 0 
+        ? `Found ${realResults.length} real company records from OpenCorporates API` 
+        : 'Using demo data - no real company records found'
     });
 
   } catch (error) {
