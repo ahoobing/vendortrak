@@ -187,23 +187,45 @@ const VendorGraph = () => {
   }, [editMode]);
 
   const handleZoomIn = useCallback(() => {
-    if (graphRef.current) {
-      graphRef.current.zoomIn();
+    if (graphRef.current && typeof graphRef.current.zoom === 'function') {
+      try {
+        const currentZoom = graphRef.current.zoom();
+        if (currentZoom !== undefined && currentZoom !== null) {
+          graphRef.current.zoom(currentZoom * 1.5, 1000);
+        } else {
+          graphRef.current.zoom(1.5, 1000);
+        }
+      } catch (error) {
+        console.warn('Zoom in failed:', error);
+      }
     }
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    if (graphRef.current) {
-      graphRef.current.zoomOut();
+    if (graphRef.current && typeof graphRef.current.zoom === 'function') {
+      try {
+        const currentZoom = graphRef.current.zoom();
+        if (currentZoom !== undefined && currentZoom !== null) {
+          graphRef.current.zoom(currentZoom * 0.75, 1000);
+        } else {
+          graphRef.current.zoom(0.75, 1000);
+        }
+      } catch (error) {
+        console.warn('Zoom out failed:', error);
+      }
     }
   }, []);
 
   const handleReset = useCallback(() => {
     setSelectedNode(null);
     setNodePositions({});
-    if (graphRef.current) {
-      graphRef.current.centerAt(0, 0, 1000);
-      graphRef.current.zoom(1, 1000);
+    if (graphRef.current && typeof graphRef.current.centerAt === 'function' && typeof graphRef.current.zoom === 'function') {
+      try {
+        graphRef.current.centerAt(0, 0, 1000);
+        graphRef.current.zoom(1, 1000);
+      } catch (error) {
+        console.warn('Reset view failed:', error);
+      }
     }
   }, []);
 
