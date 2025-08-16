@@ -14,6 +14,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm();
 
@@ -206,12 +207,23 @@ const Register = () => {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
-                    className="input pr-10"
+                    className={`input pr-10 ${
+                      watch('password') ? 
+                        (errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 
+                         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(watch('password')) ? 
+                         'border-green-500 focus:border-green-500 focus:ring-green-500' : 
+                         'border-yellow-500 focus:border-yellow-500 focus:ring-yellow-500') : 
+                        ''
+                    }`}
                     {...register('password', {
                       required: 'Password is required',
                       minLength: {
                         value: 8,
                         message: 'Password must be at least 8 characters',
+                      },
+                      pattern: {
+                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
                       },
                     })}
                   />
@@ -230,6 +242,113 @@ const Register = () => {
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
                 )}
+                
+                {/* Password Strength Meter */}
+                {watch('password') && (
+                  <div className="mt-2">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Password strength:</span>
+                      <span className={(() => {
+                        const password = watch('password') || '';
+                        if (password.length === 0) return 'text-gray-400';
+                        if (password.length < 8) return 'text-red-500';
+                        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) return 'text-yellow-500';
+                        return 'text-green-500';
+                      })()}>
+                        {(() => {
+                          const password = watch('password') || '';
+                          if (password.length === 0) return 'None';
+                          if (password.length < 8) return 'Weak';
+                          if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) return 'Fair';
+                          return 'Strong';
+                        })()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          (() => {
+                            const password = watch('password') || '';
+                            if (password.length === 0) return 'w-0 bg-gray-300';
+                            if (password.length < 8) return 'w-1/4 bg-red-500';
+                            if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) return 'w-2/3 bg-yellow-500';
+                            return 'w-full bg-green-500';
+                          })()
+                        }`}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Password Requirements */}
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-500 font-medium">Password requirements:</p>
+                  <div className="grid grid-cols-1 gap-1 text-xs">
+                    <div className={`flex items-center ${watch('password')?.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${watch('password')?.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      At least 8 characters
+                    </div>
+                    <div className={`flex items-center ${/^(?=.*[a-z])/.test(watch('password') || '') ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${/^(?=.*[a-z])/.test(watch('password') || '') ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      One lowercase letter
+                    </div>
+                    <div className={`flex items-center ${/^(?=.*[A-Z])/.test(watch('password') || '') ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${/^(?=.*[A-Z])/.test(watch('password') || '') ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      One uppercase letter
+                    </div>
+                    <div className={`flex items-center ${/^(?=.*\d)/.test(watch('password') || '') ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${/^(?=.*\d)/.test(watch('password') || '') ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      One number
+                    </div>
+                    <div className={`flex items-center ${/^(?=.*[@$!%*?&])/.test(watch('password') || '') ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${/^(?=.*[@$!%*?&])/.test(watch('password') || '') ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      One special character (@$!%*?&)
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                    Confirm Password
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      id="confirmPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      className={`input pr-10 ${
+                        watch('confirmPassword') ? 
+                          (errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 
+                           watch('confirmPassword') === watch('password') && watch('password') ? 
+                           'border-green-500 focus:border-green-500 focus:ring-green-500' : 
+                           'border-yellow-500 focus:border-yellow-500 focus:ring-yellow-500') : 
+                          ''
+                      }`}
+                      {...register('confirmPassword', {
+                        required: 'Please confirm your password',
+                        validate: (value) => {
+                          const password = watch('password');
+                          return value === password || 'Passwords do not match';
+                        },
+                      })}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
