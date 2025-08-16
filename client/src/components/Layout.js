@@ -44,7 +44,18 @@ const Layout = ({ children }) => {
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div 
+          className="fixed inset-0 bg-gray-600 bg-opacity-75" 
+          onClick={() => setSidebarOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setSidebarOpen(false);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
+        />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <h1 className="text-xl font-semibold text-gray-900">VendorTrak</h1>
@@ -175,6 +186,14 @@ const Layout = ({ children }) => {
         <div
           className="fixed inset-0 z-30"
           onClick={() => setUserMenuOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setUserMenuOpen(false);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close user menu"
         />
       )}
     </div>

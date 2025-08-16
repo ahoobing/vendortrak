@@ -233,7 +233,6 @@ class VendorSearchService {
     try {
       // Use a simple search API to find company websites
       // This is a basic implementation - in production you'd use a proper search API
-      const searchQuery = `${query} company website contact`;
       
       // For now, we'll create some realistic company data based on the search query
       const companies = [

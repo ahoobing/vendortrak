@@ -302,15 +302,24 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
             <h4 className="text-sm font-medium text-blue-900 mb-2">Search Results:</h4>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {searchResults.map((result) => (
-                                 <div
-                   key={result.id}
-                   className={`bg-white border rounded-md p-3 cursor-pointer transition-colors ${
-                     selectedResult?.id === result.id 
-                       ? 'border-blue-500 bg-blue-50' 
-                       : 'border-blue-200 hover:border-blue-300'
-                   }`}
-                   onClick={() => setSelectedResult(result)}
-                 >
+                                                 <div
+                  key={result.id}
+                  className={`bg-white border rounded-md p-3 cursor-pointer transition-colors ${
+                    selectedResult?.id === result.id 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-blue-200 hover:border-blue-300'
+                  }`}
+                  onClick={() => setSelectedResult(result)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedResult(result);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select ${result.name} as vendor information`}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h5 className="font-medium text-gray-900">{result.name}</h5>
