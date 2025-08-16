@@ -399,40 +399,7 @@ router.put('/:id/contracts/:contractId', requireManager, [
   }
 });
 
-// Add data type to vendor
-router.post('/:id/data-types', requireManager, [
-  body('name').trim().notEmpty().withMessage('Data type name required'),
-  body('category').trim().notEmpty().withMessage('Category required'),
-  body('sensitivity').optional().isIn(['public', 'internal', 'confidential', 'restricted'])
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
 
-    const vendor = await Vendor.findOne({
-      _id: req.params.id,
-      tenantId: req.tenant._id
-    });
-
-    if (!vendor) {
-      return res.status(404).json({ error: 'Vendor not found' });
-    }
-
-    vendor.dataTypes.push(req.body);
-    await vendor.save();
-
-    res.status(201).json({
-      message: 'Data type added successfully',
-      dataType: vendor.dataTypes[vendor.dataTypes.length - 1]
-    });
-
-  } catch (error) {
-    console.error('Add data type error:', error);
-    res.status(500).json({ error: 'Failed to add data type' });
-  }
-});
 
 // Add performance review
 router.post('/:id/reviews', [
@@ -534,7 +501,7 @@ router.get('/:id/data-types', async (req, res) => {
 });
 
 // Add data type to vendor
-router.post('/:id/data-types', [
+router.post('/:id/data-types', requireManager, [
   body('dataTypeId').isMongoId().withMessage('Valid data type ID is required'),
   body('notes').optional().trim().isLength({ max: 500 }).withMessage('Notes must be less than 500 characters')
 ], async (req, res) => {
@@ -590,7 +557,7 @@ router.post('/:id/data-types', [
 });
 
 // Update data type assignment
-router.put('/:id/data-types/:dataTypeId', [
+router.put('/:id/data-types/:dataTypeId', requireManager, [
   body('notes').optional().trim().isLength({ max: 500 }).withMessage('Notes must be less than 500 characters')
 ], async (req, res) => {
   try {
@@ -644,7 +611,7 @@ router.put('/:id/data-types/:dataTypeId', [
 });
 
 // Remove data type from vendor
-router.delete('/:id/data-types/:dataTypeId', async (req, res) => {
+router.delete('/:id/data-types/:dataTypeId', requireManager, async (req, res) => {
   try {
     const vendor = await Vendor.findOne({
       _id: req.params.id,
