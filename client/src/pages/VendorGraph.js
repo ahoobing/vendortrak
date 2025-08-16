@@ -3,11 +3,7 @@ import { useQuery } from 'react-query';
 import { vendorAPI } from '../services/api';
 import ForceGraph2D from 'react-force-graph-2d';
 import { 
-  Building2, 
-  Database, 
-  Network, 
   Filter,
-  Search,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -16,13 +12,16 @@ import {
 
 const VendorGraph = () => {
   const [selectedNode, setSelectedNode] = useState(null);
-  const [hoveredNode, setHoveredNode] = useState(null);
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [filters, setFilters] = useState({
     showDataTypes: true,
     showIndustries: true,
     showRiskLevels: true,
     showContractValues: true
+  });
+  const [graphSettings, setGraphSettings] = useState({
+    enableAnimation: true,
+    linkDistance: 100,
+    nodeStrength: -30
   });
 
   // Fetch vendor data
@@ -146,7 +145,7 @@ const VendorGraph = () => {
   }, []);
 
   const handleNodeHover = useCallback((node) => {
-    setHoveredNode(node);
+    // Handle node hover if needed in the future
   }, []);
 
   const handleZoomIn = useCallback(() => {
@@ -159,7 +158,6 @@ const VendorGraph = () => {
 
   const handleReset = useCallback(() => {
     setSelectedNode(null);
-    setHoveredNode(null);
   }, []);
 
   if (isLoading) {
@@ -229,6 +227,45 @@ const VendorGraph = () => {
                 />
                 <span className="text-sm">Show Risk Levels</span>
               </label>
+            </div>
+
+            <div className="mt-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold mb-2">Animation Settings</h4>
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={graphSettings.enableAnimation}
+                    onChange={(e) => setGraphSettings(prev => ({ ...prev, enableAnimation: e.target.checked }))}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Enable Animation</span>
+                </label>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Link Distance: {graphSettings.linkDistance}</label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="200"
+                    value={graphSettings.linkDistance}
+                    onChange={(e) => setGraphSettings(prev => ({ ...prev, linkDistance: parseInt(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Node Strength: {graphSettings.nodeStrength}</label>
+                  <input
+                    type="range"
+                    min="-100"
+                    max="0"
+                    value={graphSettings.nodeStrength}
+                    onChange={(e) => setGraphSettings(prev => ({ ...prev, nodeStrength: parseInt(e.target.value) }))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 pt-4 border-t">
@@ -311,11 +348,15 @@ const VendorGraph = () => {
                 nodeRelSize={6}
                 linkColor={(link) => link.color}
                 linkWidth={2}
-                linkDirectionalParticles={2}
+                linkDirectionalParticles={graphSettings.enableAnimation ? 2 : 0}
                 linkDirectionalParticleSpeed={0.005}
                 onNodeClick={handleNodeClick}
                 onNodeHover={handleNodeHover}
-                cooldownTicks={100}
+                cooldownTicks={graphSettings.enableAnimation ? 100 : 0}
+                d3AlphaDecay={graphSettings.enableAnimation ? 0.02 : 0}
+                d3VelocityDecay={graphSettings.enableAnimation ? 0.4 : 0}
+                linkDistance={graphSettings.linkDistance}
+                nodeStrength={graphSettings.nodeStrength}
                 nodeCanvasObject={(node, ctx, globalScale) => {
                   const label = node.name;
                   const fontSize = 12/globalScale;

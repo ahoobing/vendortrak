@@ -5,7 +5,7 @@ import { vendorAPI } from '../services/api';
 import vendorSearchService from '../services/vendorSearch';
 import LoadingSpinner from './LoadingSpinner';
 import toast from 'react-hot-toast';
-import { useAuth } from '../contexts/AuthContext';
+
 import { Search, Globe, Building2, Mail, MapPin, Calendar, DollarSign, User, FileText, AlertCircle } from 'lucide-react';
 
 const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
