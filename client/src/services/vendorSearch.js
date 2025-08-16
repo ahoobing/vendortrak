@@ -1,5 +1,6 @@
 // Vendor Search Service
 // This service handles searching for vendor information from various sources
+import { api } from './api';
 
 class VendorSearchService {
   constructor() {
@@ -9,13 +10,8 @@ class VendorSearchService {
   // Search for vendor information
   async searchVendors(query) {
     try {
-      const response = await fetch(`${this.baseURL}/search?q=${encodeURIComponent(query)}`);
-      
-      if (!response.ok) {
-        throw new Error(`Search failed: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await api.get(`${this.baseURL}/search?q=${encodeURIComponent(query)}`);
+      return response.data;
     } catch (error) {
       console.error('Vendor search error:', error);
       throw error;
