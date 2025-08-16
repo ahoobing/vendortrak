@@ -235,7 +235,7 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
       if (!data.primaryContactPhone || data.primaryContactPhone.trim() === '') delete data.primaryContactPhone;
       if (!data.notes || data.notes.trim() === '') delete data.notes;
 
-      if (vendor) {
+      if (vendor && vendor._id) {
         await updateVendorMutation.mutateAsync(data);
       } else {
         await createVendorMutation.mutateAsync(data);

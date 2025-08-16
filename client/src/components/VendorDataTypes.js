@@ -39,12 +39,15 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
   // Fetch all available data types
   const {
     data: allDataTypesResponse,
-    isLoading: allDataTypesLoading
+    isLoading: allDataTypesLoading,
+    error: allDataTypesError
   } = useQuery(
-    'allDataTypes',
+    ['allDataTypes', 'vendor-assignment'],
     () => dataTypeAPI.getAll({ limit: 1000 }),
     {
-      enabled: showAddModal
+      enabled: isOpen, // Always fetch when modal is open, not just when add modal is shown
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000 // 10 minutes
     }
   );
 
@@ -101,10 +104,17 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
   const vendorDataTypes = vendorDataTypesResponse?.data?.dataTypes || vendorDataTypesResponse?.dataTypes || [];
   const allDataTypes = allDataTypesResponse?.data?.dataTypes || allDataTypesResponse?.dataTypes || [];
 
+  // Debug logging
+  console.log('VendorDataTypes - allDataTypesResponse:', allDataTypesResponse);
+  console.log('VendorDataTypes - allDataTypes:', allDataTypes);
+  console.log('VendorDataTypes - vendorDataTypes:', vendorDataTypes);
+
   // Filter out already assigned data types
   const availableDataTypes = allDataTypes.filter(
     dataType => !vendorDataTypes.some(vdt => vdt.dataTypeId._id === dataType._id)
   );
+
+  console.log('VendorDataTypes - availableDataTypes:', availableDataTypes);
 
   const handleAddDataType = () => {
     if (!newDataTypeId) {
@@ -305,15 +315,31 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
                   <select
                     value={newDataTypeId}
                     onChange={(e) => setNewDataTypeId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    disabled={allDataTypesLoading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
                   >
-                    <option value="">Choose a data type...</option>
-                    {availableDataTypes.map((dataType) => (
-                      <option key={dataType._id} value={dataType._id}>
-                        {dataType.name} ({dataType.classification})
-                      </option>
-                    ))}
+                    <option value="">
+                      {allDataTypesLoading ? 'Loading data types...' : 'Choose a data type...'}
+                    </option>
+                    {availableDataTypes.length === 0 && !allDataTypesLoading ? (
+                      <option value="" disabled>No data types available</option>
+                    ) : (
+                      availableDataTypes.map((dataType) => (
+                        <option key={dataType._id} value={dataType._id}>
+                          {dataType.name} ({dataType.classification})
+                        </option>
+                      ))
+                    )}
                   </select>
+                  {allDataTypesLoading && (
+                    <p className="text-sm text-gray-500 mt-1">Loading available data types...</p>
+                  )}
+                  {allDataTypesError && (
+                    <p className="text-sm text-red-500 mt-1">Failed to load data types. Please try again.</p>
+                  )}
+                  {availableDataTypes.length === 0 && !allDataTypesLoading && allDataTypes.length > 0 && (
+                    <p className="text-sm text-blue-500 mt-1">All data types are already assigned to this vendor.</p>
+                  )}
                 </div>
 
                 <div>
@@ -338,7 +364,7 @@ const VendorDataTypes = ({ vendorId, isOpen, onClose }) => {
                   </button>
                   <button
                     onClick={handleAddDataType}
-                    disabled={addDataTypeMutation.isLoading || !newDataTypeId}
+                    disabled={addDataTypeMutation.isLoading || !newDataTypeId || availableDataTypes.length === 0}
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
                   >
                     {addDataTypeMutation.isLoading ? 'Adding...' : 'Add Data Type'}
