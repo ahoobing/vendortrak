@@ -12,7 +12,8 @@ import {
   LogOut,
   ChevronDown,
   Network,
-  Database
+  Database,
+  TrendingUp
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -27,6 +28,7 @@ const Layout = ({ children }) => {
     { name: 'Vendors', href: '/vendors', icon: Building2 },
     { name: 'Vendor Graph', href: '/vendor-graph', icon: Network },
     { name: 'Data Types', href: '/data-types', icon: Database },
+    { name: 'News', href: '/news', icon: TrendingUp },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];

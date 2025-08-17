@@ -95,3 +95,12 @@ export const dataTypeAPI = {
 
   getStats: () => api.get('/api/data-types/stats')
 };
+
+// News API functions
+export const newsAPI = {
+  getVendorNews: (params = {}) => api.get('/api/news/vendors', { params }),
+  getIndustryNews: (params = {}) => api.get('/api/news/industry', { params }),
+  getSecurityAlerts: (params = {}) => api.get('/api/news/security-alerts', { params }),
+  getNewsByVendor: (vendorId, params = {}) => api.get(`/api/news/vendors/${vendorId}`, { params }),
+  getNewsStats: () => api.get('/api/news/stats'),
+};

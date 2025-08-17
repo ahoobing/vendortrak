@@ -9,6 +9,7 @@ import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
 import VendorGraph from './pages/VendorGraph';
 import DataTypes from './pages/DataTypes';
+import News from './pages/News';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -40,6 +41,7 @@ function App() {
               <Route path="/vendors/:id" element={<VendorDetail />} />
               <Route path="/vendor-graph" element={<VendorGraph />} />
               <Route path="/data-types" element={<DataTypes />} />
+              <Route path="/news" element={<News />} />
               <Route path="/users" element={<Users />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />

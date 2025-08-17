@@ -10,6 +10,7 @@ const tenantRoutes = require('./routes/tenants');
 const vendorRoutes = require('./routes/vendors');
 const userRoutes = require('./routes/users');
 const dataTypeRoutes = require('./routes/dataTypes');
+const newsRoutes = require('./routes/news');
 const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/tenants', authenticateToken, tenantRoutes);
 app.use('/api/vendors', authenticateToken, vendorRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/data-types', dataTypeRoutes);
+app.use('/api/news', authenticateToken, newsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

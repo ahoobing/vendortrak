@@ -10,6 +10,7 @@
     "build": "cd client && npm run build",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "test:setup": "cd server && npm run seed:test-user",
+    "test:client": "cd client && npm run test:e2e",
     "test:e2e": "cd client && npm run test:e2e",
     "test:e2e:single": "cd client && npm run test:e2e:single"
   },
