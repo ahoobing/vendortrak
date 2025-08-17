@@ -1,51 +1,59 @@
 const express = require('express');
 const router = express.Router();
 const Vendor = require('../models/Vendor');
+const News = require('../models/News');
+const newsScheduler = require('../services/newsScheduler');
 
 // Get vendor-specific news
 router.get('/vendors', async (req, res) => {
   try {
     const { limit = 20, offset = 0, vendorId, category } = req.query;
+    const tenantId = req.user.tenantId;
     
-    // In a real implementation, this would fetch from a news API or database
-    // For now, we'll return mock data based on vendors in the system
-    const vendors = await Vendor.find().limit(parseInt(limit));
+    // Build query
+    let query = { tenantId, isActive: true };
     
-    const mockVendorNews = vendors.map((vendor, index) => ({
-      id: `news-${vendor._id}-${index}`,
-      title: `${vendor.name} ${index % 3 === 0 ? 'Security Update' : index % 3 === 1 ? 'Service Announcement' : 'Contract Renewal'}`,
-      summary: index % 3 === 0 
-        ? `Important security update for ${vendor.name} services. Please review the latest security patches and updates.`
-        : index % 3 === 1
-        ? `${vendor.name} has announced new service features and improvements to their platform.`
-        : `${vendor.name} contract is up for renewal. Review terms and conditions.`,
-      publishedAt: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)).toISOString(),
-      url: `https://example.com/news/${vendor._id}-${index}`,
-      category: index % 3 === 0 ? 'security' : 'general',
-      severity: index % 3 === 0 ? (index % 4 === 0 ? 'critical' : index % 4 === 1 ? 'high' : 'medium') : null,
-      vendorId: vendor._id.toString(),
-      vendorName: vendor.name,
-      source: 'VendorTrak Monitoring'
-    }));
-
     // Filter by vendor if specified
-    let filteredNews = mockVendorNews;
     if (vendorId) {
-      filteredNews = mockVendorNews.filter(news => news.vendorId === vendorId);
+      query.$or = [
+        { vendorId: vendorId },
+        { vendorName: { $regex: new RegExp(vendorId, 'i') } }
+      ];
     }
     
     // Filter by category if specified
     if (category) {
-      filteredNews = filteredNews.filter(news => news.category === category);
+      query.category = category;
     }
 
-    // Apply pagination
-    const paginatedNews = filteredNews.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    // Get total count
+    const total = await News.countDocuments(query);
+
+    // Get paginated results
+    const news = await News.find(query)
+      .sort({ publishedAt: -1 })
+      .skip(parseInt(offset))
+      .limit(parseInt(limit))
+      .populate('vendorId', 'name');
+
+    // Transform to match expected format
+    const transformedNews = news.map(item => ({
+      id: item._id.toString(),
+      title: item.title,
+      summary: item.summary,
+      publishedAt: item.publishedAt.toISOString(),
+      url: item.url,
+      category: item.category,
+      severity: item.severity,
+      vendorId: item.vendorId?._id?.toString(),
+      vendorName: item.vendorName || item.vendorId?.name,
+      source: item.source
+    }));
 
     res.json({
       success: true,
-      news: paginatedNews,
-      total: filteredNews.length,
+      news: transformedNews,
+      total,
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -62,98 +70,40 @@ router.get('/vendors', async (req, res) => {
 router.get('/industry', async (req, res) => {
   try {
     const { limit = 10, offset = 0 } = req.query;
+    const tenantId = req.user.tenantId;
     
-    // Mock industry security news
-    const mockIndustryNews = [
-      {
-        id: 'industry-1',
-        title: 'Major Cybersecurity Breach Affects Multiple Cloud Providers',
-        summary: 'A widespread security vulnerability has been discovered affecting several major cloud service providers. Organizations are advised to review their security protocols.',
-        publishedAt: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/cybersecurity-breach-2024',
-        category: 'security',
-        severity: 'critical',
-        source: 'Security Weekly'
-      },
-      {
-        id: 'industry-2',
-        title: 'New Data Privacy Regulations Coming into Effect',
-        summary: 'Updated data privacy regulations will require organizations to implement stricter data handling procedures and enhanced consent mechanisms.',
-        publishedAt: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/data-privacy-regulations-2024',
-        category: 'compliance',
-        severity: 'high',
-        source: 'Privacy Today'
-      },
-      {
-        id: 'industry-3',
-        title: 'Supply Chain Security Best Practices Updated',
-        summary: 'Industry leaders have released updated guidelines for supply chain security, emphasizing third-party risk management and vendor assessment.',
-        publishedAt: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/supply-chain-security-2024',
-        category: 'security',
-        severity: 'medium',
-        source: 'Supply Chain Security'
-      },
-      {
-        id: 'industry-4',
-        title: 'Ransomware Attacks Targeting Healthcare Sector',
-        summary: 'Recent ransomware attacks have specifically targeted healthcare organizations, highlighting the need for enhanced cybersecurity measures.',
-        publishedAt: new Date(Date.now() - (4 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/healthcare-ransomware-2024',
-        category: 'security',
-        severity: 'high',
-        source: 'Healthcare Security News'
-      },
-      {
-        id: 'industry-5',
-        title: 'Zero-Day Vulnerability in Popular Software',
-        summary: 'A critical zero-day vulnerability has been discovered in widely-used enterprise software. Immediate patching is recommended.',
-        publishedAt: new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/zero-day-vulnerability-2024',
-        category: 'security',
-        severity: 'critical',
-        source: 'Vulnerability Research'
-      },
-      {
-        id: 'industry-6',
-        title: 'AI-Powered Security Threats on the Rise',
-        summary: 'Security researchers are reporting an increase in AI-powered cyber attacks, requiring new defensive strategies.',
-        publishedAt: new Date(Date.now() - (6 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/ai-security-threats-2024',
-        category: 'security',
-        severity: 'medium',
-        source: 'AI Security Journal'
-      },
-      {
-        id: 'industry-7',
-        title: 'Third-Party Risk Management Framework Released',
-        summary: 'A comprehensive framework for managing third-party risks has been published, providing guidelines for vendor assessment.',
-        publishedAt: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/third-party-risk-framework-2024',
-        category: 'compliance',
-        severity: 'low',
-        source: 'Risk Management Institute'
-      },
-      {
-        id: 'industry-8',
-        title: 'Cloud Security Standards Updated',
-        summary: 'Major cloud security standards have been updated to address emerging threats and new attack vectors.',
-        publishedAt: new Date(Date.now() - (8 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: 'https://example.com/industry/cloud-security-standards-2024',
-        category: 'security',
-        severity: 'medium',
-        source: 'Cloud Security Alliance'
-      }
-    ];
+    // Get security news from database
+    const query = { 
+      tenantId, 
+      isActive: true,
+      category: { $in: ['security', 'breach', 'compliance'] }
+    };
 
-    // Apply pagination
-    const paginatedNews = mockIndustryNews.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    // Get total count
+    const total = await News.countDocuments(query);
+
+    // Get paginated results
+    const news = await News.find(query)
+      .sort({ publishedAt: -1 })
+      .skip(parseInt(offset))
+      .limit(parseInt(limit));
+
+    // Transform to match expected format
+    const transformedNews = news.map(item => ({
+      id: item._id.toString(),
+      title: item.title,
+      summary: item.summary,
+      publishedAt: item.publishedAt.toISOString(),
+      url: item.url,
+      category: item.category,
+      severity: item.severity,
+      source: item.source
+    }));
 
     res.json({
       success: true,
-      news: paginatedNews,
-      total: mockIndustryNews.length,
+      news: transformedNews,
+      total,
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -170,57 +120,46 @@ router.get('/industry', async (req, res) => {
 router.get('/security-alerts', async (req, res) => {
   try {
     const { limit = 10, offset = 0, severity } = req.query;
+    const tenantId = req.user.tenantId;
     
-    // Mock security alerts
-    const mockSecurityAlerts = [
-      {
-        id: 'alert-1',
-        title: 'Critical: Zero-Day Exploit in Vendor Software',
-        summary: 'A critical zero-day vulnerability has been discovered in software used by multiple vendors. Immediate action required.',
-        publishedAt: new Date(Date.now() - (1 * 60 * 60 * 1000)).toISOString(), // 1 hour ago
-        url: 'https://example.com/alerts/zero-day-exploit-2024',
-        severity: 'critical',
-        affectedVendors: ['Vendor A', 'Vendor B', 'Vendor C'],
-        recommendedAction: 'Apply security patch immediately',
-        source: 'Security Response Team'
-      },
-      {
-        id: 'alert-2',
-        title: 'High: Data Breach Reported by Cloud Provider',
-        summary: 'A major cloud service provider has reported a data breach affecting customer data. Review your data exposure.',
-        publishedAt: new Date(Date.now() - (3 * 60 * 60 * 1000)).toISOString(), // 3 hours ago
-        url: 'https://example.com/alerts/cloud-breach-2024',
-        severity: 'high',
-        affectedVendors: ['Cloud Provider X'],
-        recommendedAction: 'Review data access logs and change credentials',
-        source: 'Incident Response'
-      },
-      {
-        id: 'alert-3',
-        title: 'Medium: Phishing Campaign Targeting Vendor Accounts',
-        summary: 'A sophisticated phishing campaign is targeting vendor management accounts. Be vigilant about suspicious emails.',
-        publishedAt: new Date(Date.now() - (6 * 60 * 60 * 1000)).toISOString(), // 6 hours ago
-        url: 'https://example.com/alerts/phishing-campaign-2024',
-        severity: 'medium',
-        affectedVendors: ['All Vendors'],
-        recommendedAction: 'Enable multi-factor authentication and review email security',
-        source: 'Threat Intelligence'
-      }
-    ];
+    // Build query for security alerts
+    let query = { 
+      tenantId, 
+      isActive: true,
+      category: { $in: ['security', 'breach'] }
+    };
 
     // Filter by severity if specified
-    let filteredAlerts = mockSecurityAlerts;
     if (severity) {
-      filteredAlerts = mockSecurityAlerts.filter(alert => alert.severity === severity);
+      query.severity = severity;
     }
 
-    // Apply pagination
-    const paginatedAlerts = filteredAlerts.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    // Get total count
+    const total = await News.countDocuments(query);
+
+    // Get paginated results
+    const alerts = await News.find(query)
+      .sort({ publishedAt: -1 })
+      .skip(parseInt(offset))
+      .limit(parseInt(limit));
+
+    // Transform to match expected format
+    const transformedAlerts = alerts.map(item => ({
+      id: item._id.toString(),
+      title: item.title,
+      summary: item.summary,
+      publishedAt: item.publishedAt.toISOString(),
+      url: item.url,
+      severity: item.severity,
+      affectedVendors: item.affectedVendors || [],
+      recommendedAction: item.recommendedAction,
+      source: item.source
+    }));
 
     res.json({
       success: true,
-      alerts: paginatedAlerts,
-      total: filteredAlerts.length,
+      alerts: transformedAlerts,
+      total,
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -238,6 +177,7 @@ router.get('/vendors/:vendorId', async (req, res) => {
   try {
     const { vendorId } = req.params;
     const { limit = 10, offset = 0 } = req.query;
+    const tenantId = req.user.tenantId;
 
     // Verify vendor exists
     const vendor = await Vendor.findById(vendorId);
@@ -248,41 +188,44 @@ router.get('/vendors/:vendorId', async (req, res) => {
       });
     }
 
-    // Mock vendor-specific news
-    const mockVendorNews = [
-      {
-        id: `vendor-${vendorId}-1`,
-        title: `${vendor.name} Security Update Available`,
-        summary: `A new security update has been released for ${vendor.name} services. This update addresses critical vulnerabilities.`,
-        publishedAt: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: `https://example.com/vendors/${vendorId}/security-update`,
-        category: 'security',
-        severity: 'high',
-        vendorId: vendorId,
-        vendorName: vendor.name,
-        source: 'VendorTrak Monitoring'
-      },
-      {
-        id: `vendor-${vendorId}-2`,
-        title: `${vendor.name} Service Maintenance Scheduled`,
-        summary: `${vendor.name} has scheduled maintenance that may affect service availability.`,
-        publishedAt: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString(),
-        url: `https://example.com/vendors/${vendorId}/maintenance`,
-        category: 'maintenance',
-        severity: 'low',
-        vendorId: vendorId,
-        vendorName: vendor.name,
-        source: 'VendorTrak Monitoring'
-      }
-    ];
+    // Build query for vendor-specific news
+    const query = {
+      tenantId,
+      isActive: true,
+      $or: [
+        { vendorId: vendorId },
+        { vendorName: { $regex: new RegExp(vendor.name, 'i') } }
+      ]
+    };
 
-    // Apply pagination
-    const paginatedNews = mockVendorNews.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    // Get total count
+    const total = await News.countDocuments(query);
+
+    // Get paginated results
+    const news = await News.find(query)
+      .sort({ publishedAt: -1 })
+      .skip(parseInt(offset))
+      .limit(parseInt(limit))
+      .populate('vendorId', 'name');
+
+    // Transform to match expected format
+    const transformedNews = news.map(item => ({
+      id: item._id.toString(),
+      title: item.title,
+      summary: item.summary,
+      publishedAt: item.publishedAt.toISOString(),
+      url: item.url,
+      category: item.category,
+      severity: item.severity,
+      vendorId: item.vendorId?._id?.toString(),
+      vendorName: item.vendorName || item.vendorId?.name,
+      source: item.source
+    }));
 
     res.json({
       success: true,
-      news: paginatedNews,
-      total: mockVendorNews.length,
+      news: transformedNews,
+      total,
       limit: parseInt(limit),
       offset: parseInt(offset),
       vendor: {
@@ -302,17 +245,35 @@ router.get('/vendors/:vendorId', async (req, res) => {
 // Get news statistics
 router.get('/stats', async (req, res) => {
   try {
-    const vendors = await Vendor.find();
+    const tenantId = req.user.tenantId;
     
-    // Mock statistics
+    // Get various statistics
+    const [
+      totalNewsItems,
+      securityAlerts,
+      criticalIssues,
+      highRiskIssues,
+      mediumRiskIssues,
+      lowRiskIssues,
+      vendorsWithNews
+    ] = await Promise.all([
+      News.countDocuments({ tenantId, isActive: true }),
+      News.countDocuments({ tenantId, isActive: true, category: { $in: ['security', 'breach'] } }),
+      News.countDocuments({ tenantId, isActive: true, severity: 'critical' }),
+      News.countDocuments({ tenantId, isActive: true, severity: 'high' }),
+      News.countDocuments({ tenantId, isActive: true, severity: 'medium' }),
+      News.countDocuments({ tenantId, isActive: true, severity: 'low' }),
+      News.distinct('vendorId', { tenantId, isActive: true, vendorId: { $exists: true, $ne: null } })
+    ]);
+
     const stats = {
-      totalNewsItems: vendors.length * 3 + 8, // 3 per vendor + 8 industry news
-      securityAlerts: 3,
-      criticalIssues: 2,
-      highRiskIssues: 4,
-      mediumRiskIssues: 6,
-      lowRiskIssues: 8,
-      vendorsWithNews: vendors.length,
+      totalNewsItems,
+      securityAlerts,
+      criticalIssues,
+      highRiskIssues,
+      mediumRiskIssues,
+      lowRiskIssues,
+      vendorsWithNews: vendorsWithNews.length,
       lastUpdated: new Date().toISOString(),
       newsSources: ['VendorTrak Monitoring', 'Security Weekly', 'Privacy Today', 'Supply Chain Security']
     };
@@ -326,6 +287,104 @@ router.get('/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch news statistics'
+    });
+  }
+});
+
+// Manual news scraping trigger (admin only)
+router.post('/scrape', async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin access required'
+      });
+    }
+
+    const tenantId = req.user.tenantId;
+    
+    // Trigger news scraping for this tenant
+    const result = await newsScheduler.runNewsScrapingForTenant(tenantId);
+    
+    res.json({
+      success: true,
+      message: 'News scraping completed successfully',
+      result
+    });
+  } catch (error) {
+    console.error('Error triggering news scraping:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to trigger news scraping'
+    });
+  }
+});
+
+// Get scheduler status (admin only)
+router.get('/scheduler/status', async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin access required'
+      });
+    }
+
+    const status = newsScheduler.getStatus();
+    
+    res.json({
+      success: true,
+      status
+    });
+  } catch (error) {
+    console.error('Error getting scheduler status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get scheduler status'
+    });
+  }
+});
+
+// Update scraping schedule (admin only)
+router.put('/scheduler/schedule', async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin access required'
+      });
+    }
+
+    const { cronExpression } = req.body;
+    
+    if (!cronExpression) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cron expression is required'
+      });
+    }
+
+    const success = newsScheduler.updateSchedule(cronExpression);
+    
+    if (success) {
+      res.json({
+        success: true,
+        message: 'Schedule updated successfully'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid cron expression'
+      });
+    }
+  } catch (error) {
+    console.error('Error updating schedule:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update schedule'
     });
   }
 });

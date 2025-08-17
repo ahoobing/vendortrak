@@ -12,6 +12,7 @@ const userRoutes = require('./routes/users');
 const dataTypeRoutes = require('./routes/dataTypes');
 const newsRoutes = require('./routes/news');
 const { authenticateToken } = require('./middleware/auth');
+const newsScheduler = require('./services/newsScheduler');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -81,6 +82,13 @@ app.use('*', (req, res) => {
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    
+    // Start the news scheduler
+    try {
+      newsScheduler.start();
+    } catch (error) {
+      console.error('Failed to start news scheduler:', error.message);
+    }
   });
 }
 
