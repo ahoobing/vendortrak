@@ -505,6 +505,9 @@ const Vendors = () => {
                       Risk Level
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Subprocessor
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Data Types
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -560,6 +563,16 @@ const Vendors = () => {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(vendor.riskLevel)}`}>
                           <span className="capitalize">{vendor.riskLevel || 'N/A'}</span>
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {vendor.isSubprocessor ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            Yes
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-500">No</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center gap-1">

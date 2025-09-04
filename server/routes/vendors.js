@@ -76,6 +76,7 @@ router.get('/export', [
       'Description',
       'Status',
       'Risk Level',
+      'Is Subprocessor',
       'Contract Value',
       'Contract Start Date',
       'Contract End Date',
@@ -109,6 +110,7 @@ router.get('/export', [
         vendor.description || '',
         vendor.status || '',
         vendor.riskLevel || '',
+        vendor.isSubprocessor ? 'Yes' : 'No',
         vendor.contractValue || '',
         vendor.contractStartDate ? vendor.contractStartDate.toISOString().split('T')[0] : '',
         vendor.contractEndDate ? vendor.contractEndDate.toISOString().split('T')[0] : '',
@@ -584,7 +586,8 @@ router.post('/', requireManager, [
   body('email').optional().isEmail().withMessage('Valid email required'),
   body('website').optional().isURL().withMessage('Valid URL required'),
   body('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
-  body('riskLevel').optional().isIn(['low', 'medium', 'high'])
+  body('riskLevel').optional().isIn(['low', 'medium', 'high']),
+  body('isSubprocessor').optional().isBoolean().withMessage('isSubprocessor must be a boolean value')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -621,7 +624,8 @@ router.put('/:id', requireManager, [
   body('email').optional().isEmail(),
   body('website').optional().isURL(),
   body('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
-  body('riskLevel').optional().isIn(['low', 'medium', 'high'])
+  body('riskLevel').optional().isIn(['low', 'medium', 'high']),
+  body('isSubprocessor').optional().isBoolean().withMessage('isSubprocessor must be a boolean value')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -1207,6 +1211,7 @@ function validateAndCleanVendorData(data, rowNumber) {
     description: data.description ? data.description.trim() : '',
     status: data.status ? data.status.trim().toLowerCase() : 'active',
     riskLevel: data.riskLevel ? data.riskLevel.trim().toLowerCase() : 'medium',
+    isSubprocessor: data.isSubprocessor ? (data.isSubprocessor.toLowerCase() === 'yes' || data.isSubprocessor.toLowerCase() === 'true' || data.isSubprocessor === '1') : false,
     contractValue: data.contractValue ? parseFloat(data.contractValue) || 0 : 0,
     contractStartDate: data.contractStartDate ? new Date(data.contractStartDate) : null,
     contractEndDate: data.contractEndDate ? new Date(data.contractEndDate) : null,

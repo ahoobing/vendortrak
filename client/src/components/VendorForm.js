@@ -27,6 +27,7 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
     defaultValues: vendor || {
       status: 'active',
       riskLevel: 'medium',
+      isSubprocessor: false,
     },
   });
 
@@ -209,6 +210,7 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
       // Set default values if not provided
       if (!data.status) data.status = 'active';
       if (!data.riskLevel) data.riskLevel = 'medium';
+      if (data.isSubprocessor === undefined) data.isSubprocessor = false;
       
       // Format contract value as number
       if (data.contractValue) {
@@ -749,6 +751,18 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
                   <option value="high">High</option>
                 </select>
               </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isSubprocessor"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                {...register('isSubprocessor')}
+              />
+              <label htmlFor="isSubprocessor" className="ml-2 block text-sm text-gray-700">
+                This vendor is also a subprocessor
+              </label>
             </div>
           </div>
         </div>

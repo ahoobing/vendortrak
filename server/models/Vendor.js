@@ -63,6 +63,10 @@ const vendorSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'medium'
   },
+  isSubprocessor: {
+    type: Boolean,
+    default: false
+  },
   contractValue: {
     type: Number,
     default: 0

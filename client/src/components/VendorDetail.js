@@ -99,6 +99,12 @@ const VendorDetail = ({ vendor }) => {
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(vendor.riskLevel)}`}>
                 <span className="capitalize">{vendor.riskLevel || 'N/A'} Risk</span>
               </span>
+              {vendor.isSubprocessor && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <Building2 className="h-3 w-3 mr-1" />
+                  Subprocessor
+                </span>
+              )}
             </div>
           </div>
         </div>
