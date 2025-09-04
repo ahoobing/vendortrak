@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api, auditAPI } from '../services/api';
+import { auditAPI } from '../services/api';
 import { 
   Search, 
   Download, 
@@ -19,6 +19,9 @@ const AuditTrail = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   
   // Filters
   const [filters, setFilters] = useState({
@@ -90,6 +93,32 @@ const AuditTrail = () => {
       console.error('Error fetching audit stats:', error);
     }
   }, [filters.startDate, filters.endDate, hasAuditPermission]);
+
+  // Handle audit log item click
+  const handleLogClick = async (logId) => {
+    try {
+      setLoadingDetails(true);
+      const response = await auditAPI.getLogById(logId);
+      
+      if (response.data.success) {
+        setSelectedLog(response.data.data);
+        setShowDetailsModal(true);
+      } else {
+        toast.error('Failed to load audit log details');
+      }
+    } catch (error) {
+      console.error('Error fetching audit log details:', error);
+      toast.error('Failed to load audit log details');
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Close details modal
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedLog(null);
+  };
 
   // Export to CSV
   const handleExport = async () => {
@@ -416,7 +445,11 @@ const AuditTrail = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {auditLogs.map((log) => (
-                    <tr key={log._id} className="hover:bg-gray-50">
+                    <tr 
+                      key={log._id} 
+                      className="hover:bg-gray-50 cursor-pointer transition-colors duration-150"
+                      onClick={() => handleLogClick(log._id)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatTimestamp(log.timestamp)}
                       </td>
@@ -477,6 +510,141 @@ const AuditTrail = () => {
           )}
         </div>
       </div>
+
+      {/* Audit Log Details Modal */}
+      {showDetailsModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Audit Log Details
+                </h3>
+                <button
+                  onClick={closeDetailsModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              {loadingDetails ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Loading details...</span>
+                </div>
+              ) : selectedLog ? (
+                <div className="space-y-4">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">Timestamp</div>
+                      <p className="mt-1 text-sm text-gray-900">{formatTimestamp(selectedLog.timestamp)}</p>
+                    </div>
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">User</div>
+                      <p className="mt-1 text-sm text-gray-900">{selectedLog.userEmail}</p>
+                    </div>
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">Action</div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getActionColor(selectedLog.action)}`}>
+                        {selectedLog.action}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">Resource</div>
+                      <div className="flex items-center mt-1">
+                        {getResourceIcon(selectedLog.resource)}
+                        <span className="ml-2 text-sm text-gray-900">{selectedLog.resource}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">IP Address</div>
+                      <p className="mt-1 text-sm text-gray-900">{selectedLog.ipAddress || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">Resource ID</div>
+                      <p className="mt-1 text-sm text-gray-900 font-mono">{selectedLog.resourceId || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  {selectedLog.details && (
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">Details</div>
+                      <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+                        {selectedLog.details}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Metadata - Show changes if available */}
+                  {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700 mb-2">Change Details</div>
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        {selectedLog.metadata.changes ? (
+                          <div className="space-y-3">
+                            {Object.entries(selectedLog.metadata.changes).map(([field, change]) => (
+                              <div key={field} className="border-l-4 border-blue-500 pl-4">
+                                <h4 className="font-medium text-gray-900 capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</h4>
+                                {change.before !== undefined && (
+                                  <div className="mt-1">
+                                    <span className="text-xs font-medium text-red-600">Before:</span>
+                                    <p className="text-sm text-gray-700 bg-red-50 p-2 rounded mt-1">
+                                      {typeof change.before === 'object' ? JSON.stringify(change.before, null, 2) : String(change.before)}
+                                    </p>
+                                  </div>
+                                )}
+                                {change.after !== undefined && (
+                                  <div className="mt-1">
+                                    <span className="text-xs font-medium text-green-600">After:</span>
+                                    <p className="text-sm text-gray-700 bg-green-50 p-2 rounded mt-1">
+                                      {typeof change.after === 'object' ? JSON.stringify(change.after, null, 2) : String(change.after)}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+                            {JSON.stringify(selectedLog.metadata, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* User Agent */}
+                  {selectedLog.userAgent && (
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700">User Agent</div>
+                      <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md break-all">
+                        {selectedLog.userAgent}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Modal Footer */}
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={closeDetailsModal}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -49,6 +49,26 @@ const auditLogger = (options = {}) => {
       return next();
     }
 
+    // Store original data for UPDATE operations to track changes
+    let originalData = null;
+    if (req.method === 'PUT' || req.method === 'PATCH') {
+      try {
+        const resourceId = getResourceIdFromUrl(req.path);
+        if (resourceId) {
+          const resource = getResourceFromUrl(req.path);
+          if (resource === 'USER') {
+            const User = require('../models/User');
+            originalData = await User.findById(resourceId).lean();
+          } else if (resource === 'VENDOR') {
+            const Vendor = require('../models/Vendor');
+            originalData = await Vendor.findById(resourceId).lean();
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching original data for audit:', error);
+      }
+    }
+
     // Store original res.json to intercept response
     const originalJson = res.json;
     let responseData = null;
@@ -87,6 +107,39 @@ const auditLogger = (options = {}) => {
             details = 'User profile accessed';
           }
 
+          // Prepare metadata with change tracking
+          const metadata = {
+            method: req.method,
+            url: req.path,
+            statusCode: res.statusCode,
+            timestamp: new Date()
+          };
+
+          // Add change tracking for UPDATE operations
+          if (action === 'UPDATE' && originalData && responseData && responseData.data) {
+            const changes = {};
+            const updatedData = responseData.data;
+            
+            // Compare original data with updated data
+            Object.keys(updatedData).forEach(key => {
+              if (key !== '_id' && key !== '__v' && key !== 'createdAt' && key !== 'updatedAt') {
+                const originalValue = originalData[key];
+                const updatedValue = updatedData[key];
+                
+                if (JSON.stringify(originalValue) !== JSON.stringify(updatedValue)) {
+                  changes[key] = {
+                    before: originalValue,
+                    after: updatedValue
+                  };
+                }
+              }
+            });
+
+            if (Object.keys(changes).length > 0) {
+              metadata.changes = changes;
+            }
+          }
+
           await AuditLog.log({
             tenantId: req.tenant._id,
             userId: req.user._id,
@@ -97,12 +150,7 @@ const auditLogger = (options = {}) => {
             details,
             ipAddress: req.ip || req.connection.remoteAddress,
             userAgent: req.get('User-Agent'),
-            metadata: {
-              method: req.method,
-              url: req.path,
-              statusCode: res.statusCode,
-              timestamp: new Date()
-            }
+            metadata
           });
         }
       } catch (error) {
