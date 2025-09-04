@@ -265,10 +265,7 @@ class VendorSearchService {
       }
       
       // 3. If no results found, create a realistic company profile
-      if (results.length === 0) {
-        const fallbackResult = this.createFallbackCompany(query);
-        results.push(fallbackResult);
-      }
+      // No fallback data - only return real search results
       
       return results;
     } catch (error) {
@@ -285,31 +282,9 @@ class VendorSearchService {
       // 2. Use company APIs like Clearbit, FullContact, etc.
       // 3. Scrape company websites for contact information
       
-      // For now, create a realistic company profile based on domain
-      const companyName = domain.split('.')[0]
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      
-      return {
-        id: `domain-${Date.now()}`,
-        name: companyName,
-        website: `https://www.${domain}`,
-        email: `info@${domain}`,
-        phone: '+1 (555) 123-4567',
-        address: '123 Business Street',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10001',
-        country: 'United States',
-        industry: this.guessIndustryFromDomain(domain),
-        description: `${companyName} is a professional services company.`,
-        primaryContact: 'Contact Us',
-        primaryContactEmail: `info@${domain}`,
-        primaryContactPhone: '+1 (555) 123-4567',
-        confidence: 0.8,
-        source: 'Domain Search'
-      };
+      // For now, return null to avoid mock data
+      console.log(`Domain search for ${domain} - no real API integration available`);
+      return null;
     } catch (error) {
       console.error('Domain search error:', error);
       return null;
@@ -322,101 +297,16 @@ class VendorSearchService {
       // In a real implementation, you would search business directories,
       // company databases, and other sources
       
-      const cleanPattern = pattern.replace(/[^a-zA-Z0-9\s]/g, '');
-      const website = `https://www.${cleanPattern.toLowerCase().replace(/\s+/g, '')}.com`;
-      
-      return {
-        id: `pattern-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: pattern,
-        website: website,
-        email: `info@${cleanPattern.toLowerCase().replace(/\s+/g, '')}.com`,
-        phone: '+1 (555) 123-4567',
-        address: '123 Business Street',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10001',
-        country: 'United States',
-        industry: this.guessIndustryFromName(pattern),
-        description: `${pattern} is a professional services company.`,
-        primaryContact: 'Contact Us',
-        primaryContactEmail: `info@${cleanPattern.toLowerCase().replace(/\s+/g, '')}.com`,
-        primaryContactPhone: '+1 (555) 123-4567',
-        confidence: 0.7,
-        source: 'Pattern Search'
-      };
+      // For now, return null to avoid mock data
+      console.log(`Pattern search for ${pattern} - no real API integration available`);
+      return null;
     } catch (error) {
       console.error('Pattern search error:', error);
       return null;
     }
   }
 
-  // Create a fallback company profile
-  createFallbackCompany(query) {
-    const cleanQuery = query.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-    const website = `https://www.${cleanQuery.toLowerCase().replace(/\s+/g, '')}.com`;
-    
-    return {
-      id: `fallback-${Date.now()}`,
-      name: cleanQuery,
-      website: website,
-      email: `info@${cleanQuery.toLowerCase().replace(/\s+/g, '')}.com`,
-      phone: '+1 (555) 123-4567',
-      address: '123 Business Street',
-      city: 'New York',
-      state: 'NY',
-      zipCode: '10001',
-      country: 'United States',
-      industry: this.guessIndustryFromName(cleanQuery),
-      description: `${cleanQuery} is a professional services company.`,
-      primaryContact: 'Contact Us',
-      primaryContactEmail: `info@${cleanQuery.toLowerCase().replace(/\s+/g, '')}.com`,
-      primaryContactPhone: '+1 (555) 123-4567',
-      confidence: 0.6,
-      source: 'Fallback'
-    };
-  }
 
-  // Guess industry from domain name
-  guessIndustryFromDomain(domain) {
-    const domainLower = domain.toLowerCase();
-    
-    if (domainLower.includes('tech') || domainLower.includes('software') || domainLower.includes('digital')) {
-      return 'Technology';
-    } else if (domainLower.includes('consult') || domainLower.includes('advisory')) {
-      return 'Consulting';
-    } else if (domainLower.includes('finance') || domainLower.includes('bank')) {
-      return 'Financial Services';
-    } else if (domainLower.includes('health') || domainLower.includes('medical')) {
-      return 'Healthcare';
-    } else if (domainLower.includes('retail') || domainLower.includes('shop')) {
-      return 'Retail';
-    } else if (domainLower.includes('manufactur') || domainLower.includes('industrial')) {
-      return 'Manufacturing';
-    } else {
-      return 'Professional Services';
-    }
-  }
-
-  // Guess industry from company name
-  guessIndustryFromName(name) {
-    const nameLower = name.toLowerCase();
-    
-    if (nameLower.includes('tech') || nameLower.includes('software') || nameLower.includes('digital') || nameLower.includes('solutions')) {
-      return 'Technology';
-    } else if (nameLower.includes('consult') || nameLower.includes('advisory') || nameLower.includes('group')) {
-      return 'Consulting';
-    } else if (nameLower.includes('finance') || nameLower.includes('bank') || nameLower.includes('capital')) {
-      return 'Financial Services';
-    } else if (nameLower.includes('health') || nameLower.includes('medical') || nameLower.includes('care')) {
-      return 'Healthcare';
-    } else if (nameLower.includes('retail') || nameLower.includes('shop') || nameLower.includes('store')) {
-      return 'Retail';
-    } else if (nameLower.includes('manufactur') || nameLower.includes('industrial') || nameLower.includes('systems')) {
-      return 'Manufacturing';
-    } else {
-      return 'Professional Services';
-    }
-  }
 
   // Format OpenCorporates result
   formatOpenCorporatesResult(data) {

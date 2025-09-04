@@ -128,64 +128,18 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
       if (data.results && data.results.length > 0) {
         toast.success(`Found ${data.results.length} potential matches`);
       } else {
-        toast('No exact matches found, but you can still fill in the details manually');
+        toast('No matches found. You can still fill in the details manually.');
       }
     } catch (error) {
       console.error('Search error:', error);
       toast.error(error.message || 'Search failed. Please try again.');
-      
-      // Fallback to mock data for demo purposes
-      const mockResults = generateMockSearchResults(searchTerm);
-      setSearchResults(mockResults);
+      setSearchResults([]);
       setShowSearchResults(true);
-              toast('Using demo data - in production, this would search real company databases');
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Generate mock search results for demo
-  const generateMockSearchResults = (term) => {
-    const baseName = term.toLowerCase();
-    return [
-      {
-        id: 1,
-        name: `${term} Inc.`,
-        website: `https://www.${baseName.replace(/\s+/g, '')}.com`,
-        email: `contact@${baseName.replace(/\s+/g, '')}.com`,
-        phone: '+1 (555) 123-4567',
-        address: '123 Business Ave, Suite 100',
-        city: 'San Francisco',
-        state: 'CA',
-        zipCode: '94105',
-        country: 'United States',
-        industry: 'Technology',
-        description: `${term} is a leading technology company specializing in innovative solutions.`,
-        primaryContact: 'John Smith',
-        primaryContactEmail: 'john.smith@' + baseName.replace(/\s+/g, '') + '.com',
-        primaryContactPhone: '+1 (555) 123-4568',
-        confidence: 0.95
-      },
-      {
-        id: 2,
-        name: `${term} Technologies`,
-        website: `https://www.${baseName.replace(/\s+/g, '')}tech.com`,
-        email: `info@${baseName.replace(/\s+/g, '')}tech.com`,
-        phone: '+1 (555) 987-6543',
-        address: '456 Innovation Blvd',
-        city: 'Austin',
-        state: 'TX',
-        zipCode: '73301',
-        country: 'United States',
-        industry: 'Software Development',
-        description: `${term} Technologies provides cutting-edge software solutions for modern businesses.`,
-        primaryContact: 'Sarah Johnson',
-        primaryContactEmail: 'sarah.johnson@' + baseName.replace(/\s+/g, '') + 'tech.com',
-        primaryContactPhone: '+1 (555) 987-6544',
-        confidence: 0.87
-      }
-    ];
-  };
 
   // Apply search result to form
   const applySearchResult = (result) => {
