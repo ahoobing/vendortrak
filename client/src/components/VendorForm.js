@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from 'react-query';
 import { vendorAPI } from '../services/api';
@@ -16,6 +16,7 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
+  const [autoSearchEnabled, setAutoSearchEnabled] = useState(true);
 
   const {
     register,
@@ -33,6 +34,54 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
 
   // Watch form values for autofill
   const watchedValues = watch();
+  const watchedName = watch('name');
+
+  // Debounced auto-search when name field changes
+  const debouncedAutoSearch = useCallback(
+    debounce(async (nameValue) => {
+      if (nameValue && nameValue.length > 2 && autoSearchEnabled && !vendor) {
+        try {
+          setSearchTerm(nameValue);
+          const validatedQuery = vendorSearchService.validateQuery(nameValue);
+          
+          setIsSearching(true);
+          const data = await vendorSearchService.searchVendors(validatedQuery);
+          setSearchResults(data.results || []);
+          setShowSearchResults(true);
+          
+          if (data.results && data.results.length > 0) {
+            toast.success(`🔍 Found ${data.results.length} potential matches for "${nameValue}"`);
+          }
+        } catch (error) {
+          console.error('Auto-search error:', error);
+          // Silent fail for auto-search
+        } finally {
+          setIsSearching(false);
+        }
+      }
+    }, 1000),
+    [autoSearchEnabled, vendor]
+  );
+
+  // Effect to trigger auto-search when name changes
+  useEffect(() => {
+    if (watchedName && watchedName !== searchTerm) {
+      debouncedAutoSearch(watchedName);
+    }
+  }, [watchedName, debouncedAutoSearch, searchTerm]);
+
+  // Debounce utility function
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
 
   const createVendorMutation = useMutation(
     (data) => vendorAPI.create(data),
@@ -263,14 +312,38 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
   return (
     <div className="space-y-6">
       {/* Autofill Search Section */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-3">
-          <Search className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-blue-900">Auto-fill Vendor Information</h3>
+          <Search className="h-6 w-6 text-blue-600" />
+          <h3 className="text-xl font-semibold text-blue-900">🔍 Auto-fill Vendor Information</h3>
         </div>
         <p className="text-sm text-blue-700 mb-4">
-          Search for vendor information online to automatically fill the form fields.
+          Search the web for vendor information to automatically populate form fields. This saves time and ensures accuracy.
         </p>
+        <div className="bg-white rounded-lg p-3 mb-4 border border-blue-100">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs text-gray-600">
+              <strong>💡 Pro Tip:</strong> Try searching for company names, websites, or domains (e.g., "Microsoft", "salesforce.com", "HubSpot")
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="autoSearchToggle"
+                checked={autoSearchEnabled}
+                onChange={(e) => setAutoSearchEnabled(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="autoSearchToggle" className="text-xs text-gray-600">
+                Auto-search as you type
+              </label>
+            </div>
+          </div>
+          {autoSearchEnabled && (
+            <div className="text-xs text-green-600">
+              ✅ Auto-search enabled - results will appear automatically when you type in the company name field
+            </div>
+          )}
+        </div>
         
         <div className="flex gap-2">
           <div className="flex-1">
@@ -416,21 +489,39 @@ const VendorForm = ({ vendor = null, onSuccess, onCancel }) => {
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Vendor Name *
+                {autoSearchEnabled && !vendor && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    <Search className="h-3 w-3 mr-1" />
+                    Auto-search enabled
+                  </span>
+                )}
               </label>
-              <input
-                id="name"
-                type="text"
-                className="input"
-                {...register('name', {
-                  required: 'Vendor name is required',
-                  maxLength: {
-                    value: 200,
-                    message: 'Name must be less than 200 characters',
-                  },
-                })}
-              />
+              <div className="relative">
+                <input
+                  id="name"
+                  type="text"
+                  className="input pr-10"
+                  {...register('name', {
+                    required: 'Vendor name is required',
+                    maxLength: {
+                      value: 200,
+                      message: 'Name must be less than 200 characters',
+                    },
+                  })}
+                />
+                {isSearching && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+              </div>
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              )}
+              {autoSearchEnabled && !vendor && (
+                <p className="mt-1 text-xs text-blue-600">
+                  💡 Start typing a company name to automatically search for information
+                </p>
               )}
             </div>
 
