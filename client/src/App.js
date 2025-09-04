@@ -13,6 +13,7 @@ import VendorGraph from './pages/VendorGraph';
 import DataTypes from './pages/DataTypes';
 import News from './pages/News';
 import Users from './pages/Users';
+import AuditTrail from './pages/AuditTrail';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -47,6 +48,7 @@ function App() {
               <Route path="/data-types" element={<DataTypes />} />
               <Route path="/news" element={<News />} />
               <Route path="/users" element={<Users />} />
+              <Route path="/audit-trail" element={<AuditTrail />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

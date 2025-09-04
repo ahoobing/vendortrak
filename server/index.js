@@ -11,7 +11,9 @@ const vendorRoutes = require('./routes/vendors');
 const userRoutes = require('./routes/users-debug');
 const dataTypeRoutes = require('./routes/dataTypes');
 const newsRoutes = require('./routes/news');
+const auditRoutes = require('./routes/audit');
 const { authenticateToken } = require('./middleware/auth-debug');
+const { auditLogger } = require('./middleware/auditLogger');
 const newsScheduler = require('./services/newsScheduler');
 
 const app = express();
@@ -42,11 +44,12 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/tenants', authenticateToken, tenantRoutes);
-app.use('/api/vendors', authenticateToken, vendorRoutes);
-app.use('/api/users', authenticateToken, userRoutes);
+app.use('/api/tenants', authenticateToken, auditLogger(), tenantRoutes);
+app.use('/api/vendors', authenticateToken, auditLogger(), vendorRoutes);
+app.use('/api/users', authenticateToken, auditLogger(), userRoutes);
 app.use('/api/data-types', dataTypeRoutes);
-app.use('/api/news', authenticateToken, newsRoutes);
+app.use('/api/news', authenticateToken, auditLogger(), newsRoutes);
+app.use('/api/audit', authenticateToken, auditRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -13,7 +13,8 @@ import {
   ChevronDown,
   Network,
   Database,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -30,6 +31,12 @@ const Layout = ({ children }) => {
     { name: 'Data Types', href: '/data-types', icon: Database },
     { name: 'News', href: '/news', icon: TrendingUp },
     { name: 'Users', href: '/users', icon: Users },
+    { 
+      name: 'Audit Trail', 
+      href: '/audit-trail', 
+      icon: Shield,
+      requiresPermission: 'canAuditLogs'
+    },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -70,6 +77,11 @@ const Layout = ({ children }) => {
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
+              // Check if user has required permission
+              if (item.requiresPermission && !user?.permissions?.[item.requiresPermission]) {
+                return null;
+              }
+              
               const Icon = item.icon;
               return (
                 <Link
@@ -99,6 +111,11 @@ const Layout = ({ children }) => {
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
+              // Check if user has required permission
+              if (item.requiresPermission && !user?.permissions?.[item.requiresPermission]) {
+                return null;
+              }
+              
               const Icon = item.icon;
               return (
                 <Link

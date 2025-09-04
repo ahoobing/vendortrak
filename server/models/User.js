@@ -164,7 +164,8 @@ userSchema.methods.canPerform = function(action) {
     'delete:datatype': 'canManageDataTypes',
     'view:reports': 'canViewReports',
     'export:data': 'canExportData',
-    'view:audit': 'canAuditLogs'
+    'view:audit': 'canAuditLogs',
+    'audit:logs': 'canAuditLogs'
   };
   
   const requiredPermission = actionPermissions[action];
