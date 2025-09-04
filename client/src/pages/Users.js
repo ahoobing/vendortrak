@@ -58,7 +58,7 @@ const Users = () => {
         ...filters
       });
       
-      const response = await api.get(`/users?${params}`);
+      const response = await api.get(`/api/users?${params}`);
       setUsers(response.data.users);
       setPagination(prev => ({
         ...prev,
@@ -75,7 +75,7 @@ const Users = () => {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await api.get('/users/stats/overview');
+      const response = await api.get('/api/users/stats/overview');
       setStats(response.data.stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -90,7 +90,7 @@ const Users = () => {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/users', formData);
+      await api.post('/api/users', formData);
       toast.success('User created successfully');
       setShowCreateModal(false);
       resetForm();
@@ -107,7 +107,7 @@ const Users = () => {
       const updateData = { ...formData };
       delete updateData.password; // Don't send password if not changed
       
-      await api.put(`/users/${selectedUser._id}`, updateData);
+      await api.put(`/api/users/${selectedUser._id}`, updateData);
       toast.success('User updated successfully');
       setShowEditModal(false);
       resetForm();
@@ -120,7 +120,7 @@ const Users = () => {
 
   const handleDeleteUser = async () => {
     try {
-      await api.delete(`/users/${selectedUser._id}`);
+      await api.delete(`/api/users/${selectedUser._id}`);
       toast.success('User deleted successfully');
       setShowDeleteModal(false);
       setSelectedUser(null);
@@ -218,6 +218,56 @@ const Users = () => {
           </button>
         )}
       </div>
+
+      {/* Welcome Message for Non-Admin Users */}
+      {!canManageUsers && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Shield className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">
+                User Management Access
+              </h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <p>
+                  You need administrator privileges to manage users in this tenant. 
+                  Contact your tenant administrator to add new users or modify existing ones.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* How to Add Users Guide for Admins */}
+      {canManageUsers && (
+        <div className="bg-green-50 border border-green-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Plus className="h-5 w-5 text-green-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">
+                Adding Users to Your Tenant
+              </h3>
+              <div className="mt-2 text-sm text-green-700">
+                <p>
+                  <strong>Step 1:</strong> Click the "Add User" button above to open the user creation form.<br/>
+                  <strong>Step 2:</strong> Fill in the required information including name, email, and role.<br/>
+                  <strong>Step 3:</strong> Choose the appropriate role based on the user's needs:<br/>
+                  • <strong>Regular User:</strong> Can manage vendors and view reports<br/>
+                  • <strong>Auditor:</strong> Read-only access with export capabilities<br/>
+                  • <strong>Admin:</strong> Full access including user management<br/>
+                  <strong>Step 4:</strong> Set the user status (Active users can log in immediately)<br/>
+                  <strong>Step 5:</strong> Click "Create User" to add them to your tenant
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       {stats && (
