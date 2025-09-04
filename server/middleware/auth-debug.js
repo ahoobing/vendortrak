@@ -23,14 +23,14 @@ const authenticateToken = async (req, res, next) => {
     
     // Get user with tenant information
     const user = await User.findById(decoded.userId)
-      .populate('tenantId', 'name subdomain status')
-      .select('-password');
+      .populate('tenantId', 'name subdomain status');
 
     console.log('🔐 [AUTH] User found:', {
       id: user?._id,
       email: user?.email,
       role: user?.role,
       status: user?.status,
+      permissions: user?.permissions,
       tenantId: user?.tenantId?._id,
       tenantName: user?.tenantId?.name,
       tenantStatus: user?.tenantId?.status

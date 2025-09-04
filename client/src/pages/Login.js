@@ -25,7 +25,8 @@ const Login = () => {
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
-        navigate('/dashboard');
+        // Don't navigate here - let the AuthContext handle the redirect
+        // navigate('/dashboard');
       } else {
         setLoginError(result.error || 'Login failed. Please check your credentials.');
       }

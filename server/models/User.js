@@ -155,6 +155,7 @@ userSchema.methods.canPerform = function(action) {
     'create:user': 'canManageUsers',
     'update:user': 'canManageUsers',
     'delete:user': 'canManageUsers',
+    'manage:users': 'canManageUsers',
     'create:vendor': 'canManageVendors',
     'update:vendor': 'canManageVendors',
     'delete:vendor': 'canManageVendors',

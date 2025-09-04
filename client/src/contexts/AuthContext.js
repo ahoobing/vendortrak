@@ -26,7 +26,21 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         const response = await api.get('/api/auth/profile');
-        setUser(response.data.user);
+        const user = response.data.user;
+        
+        // Fetch user permissions
+        try {
+          const permissionsResponse = await api.get('/api/users/permissions');
+          const userWithPermissions = {
+            ...user,
+            permissions: permissionsResponse.data.permissions
+          };
+          setUser(userWithPermissions);
+        } catch (permissionsError) {
+          console.error('Failed to fetch permissions:', permissionsError);
+          // Still set user even if permissions fetch fails
+          setUser(user);
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -44,9 +58,21 @@ export const AuthProvider = ({ children }) => {
       
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
       
-      toast.success('Login successful!');
+      // Fetch user permissions after successful login
+      try {
+        const permissionsResponse = await api.get('/api/users/permissions');
+        const userWithPermissions = {
+          ...user,
+          permissions: permissionsResponse.data.permissions
+        };
+        setUser(userWithPermissions);
+      } catch (permissionsError) {
+        console.error('Failed to fetch permissions:', permissionsError);
+        // Still set user even if permissions fetch fails
+        setUser(user);
+      }
+      
       return { success: true };
     } catch (error) {
       let message = 'Login failed';
@@ -65,10 +91,6 @@ export const AuthProvider = ({ children }) => {
         message = 'Network error. Please check your internet connection.';
       }
       
-      toast.error(message, {
-        duration: 8000, // 8 seconds for login errors
-        id: 'login-error', // Prevent duplicate toasts
-      });
       return { success: false, error: message };
     }
   };

@@ -108,7 +108,7 @@ router.post('/register', [
 
 // Login user
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('email').isEmail().withMessage('Valid email required'),
   body('password').notEmpty().withMessage('Password required')
 ], async (req, res) => {
   try {
@@ -140,6 +140,7 @@ router.post('/login', [
 
     // Verify password
     const isValidPassword = await user.comparePassword(password);
+    
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -344,7 +345,6 @@ router.post('/reset-password', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('🔐 [RESET-PASSWORD] Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
