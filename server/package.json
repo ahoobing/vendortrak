@@ -11,7 +11,8 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "seed:test-user": "node seed-test-user.js",
-    "seed:news": "node seed-news.js"
+    "seed:news": "node seed-news.js",
+    "migrate:user-roles": "node migrate-user-roles.js"
   },
   "dependencies": {
     "express": "^4.18.2",

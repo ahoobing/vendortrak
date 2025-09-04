@@ -1,15 +1,15 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const User = require('../models/User');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Get all users for tenant
-router.get('/', requireAdmin, [
+router.get('/', requirePermission('view:reports'), [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
-  query('role').optional().isIn(['admin', 'manager', 'user']),
+  query('role').optional().isIn(['admin', 'regular', 'auditor']),
   query('status').optional().isIn(['active', 'inactive', 'suspended']),
   query('search').optional().trim()
 ], async (req, res) => {
@@ -75,7 +75,7 @@ router.get('/', requireAdmin, [
 });
 
 // Get user by ID
-router.get('/:id', requireAdmin, async (req, res) => {
+router.get('/:id', requirePermission('view:reports'), async (req, res) => {
   try {
     const user = await User.findOne({
       _id: req.params.id,
@@ -95,12 +95,12 @@ router.get('/:id', requireAdmin, async (req, res) => {
 });
 
 // Create new user
-router.post('/', requireAdmin, [
+router.post('/', requirePermission('create:user'), [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('firstName').trim().isLength({ min: 1, max: 50 }).withMessage('First name required'),
   body('lastName').trim().isLength({ min: 1, max: 50 }).withMessage('Last name required'),
-  body('role').isIn(['admin', 'manager', 'user']).withMessage('Valid role required'),
+  body('role').isIn(['admin', 'regular', 'auditor']).withMessage('Valid role required'),
   body('status').optional().isIn(['active', 'inactive', 'suspended'])
 ], async (req, res) => {
   try {
@@ -138,10 +138,10 @@ router.post('/', requireAdmin, [
 });
 
 // Update user
-router.put('/:id', requireAdmin, [
+router.put('/:id', requirePermission('update:user'), [
   body('firstName').optional().trim().isLength({ min: 1, max: 50 }),
   body('lastName').optional().trim().isLength({ min: 1, max: 50 }),
-  body('role').optional().isIn(['admin', 'manager', 'user']),
+  body('role').optional().isIn(['admin', 'regular', 'auditor']),
   body('status').optional().isIn(['active', 'inactive', 'suspended']),
   body('profile.phone').optional().trim(),
   body('profile.department').optional().trim(),
@@ -178,7 +178,7 @@ router.put('/:id', requireAdmin, [
 });
 
 // Delete user
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requirePermission('delete:user'), async (req, res) => {
   try {
     // Prevent deleting the last admin
     if (req.params.id === req.user._id.toString()) {
@@ -218,7 +218,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 // Reset user password
-router.post('/:id/reset-password', requireAdmin, [
+router.post('/:id/reset-password', requirePermission('update:user'), [
   body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
 ], async (req, res) => {
   try {
@@ -248,20 +248,20 @@ router.post('/:id/reset-password', requireAdmin, [
 });
 
 // Get user statistics
-router.get('/stats/overview', requireAdmin, async (req, res) => {
+router.get('/stats/overview', requirePermission('view:reports'), async (req, res) => {
   try {
     const [
       totalUsers,
       activeUsers,
       adminUsers,
-      managerUsers,
-      regularUsers
+      regularUsers,
+      auditorUsers
     ] = await Promise.all([
       User.countDocuments({ tenantId: req.tenant._id }),
       User.countDocuments({ tenantId: req.tenant._id, status: 'active' }),
       User.countDocuments({ tenantId: req.tenant._id, role: 'admin' }),
-      User.countDocuments({ tenantId: req.tenant._id, role: 'manager' }),
-      User.countDocuments({ tenantId: req.tenant._id, role: 'user' })
+      User.countDocuments({ tenantId: req.tenant._id, role: 'regular' }),
+      User.countDocuments({ tenantId: req.tenant._id, role: 'auditor' })
     ]);
 
     const stats = {
@@ -270,8 +270,8 @@ router.get('/stats/overview', requireAdmin, async (req, res) => {
       inactiveUsers: totalUsers - activeUsers,
       roleDistribution: {
         admin: adminUsers,
-        manager: managerUsers,
-        user: regularUsers
+        regular: regularUsers,
+        auditor: auditorUsers
       }
     };
 
@@ -280,6 +280,29 @@ router.get('/stats/overview', requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Get user stats error:', error);
     res.status(500).json({ error: 'Failed to get user statistics' });
+  }
+});
+
+// Get user permissions
+router.get('/:id/permissions', requirePermission('view:reports'), async (req, res) => {
+  try {
+    const user = await User.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id
+    }).select('permissions role');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      permissions: user.permissions,
+      role: user.role
+    });
+
+  } catch (error) {
+    console.error('Get user permissions error:', error);
+    res.status(500).json({ error: 'Failed to get user permissions' });
   }
 });
 
