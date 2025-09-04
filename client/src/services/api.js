@@ -49,6 +49,11 @@ export const vendorAPI = {
   removeDataType: (id, dataTypeId) => api.delete(`/api/vendors/${id}/data-types/${dataTypeId}`),
   addReview: (id, data) => api.post(`/api/vendors/${id}/reviews`, data),
   getStats: (id) => api.get(`/api/vendors/${id}/stats`),
+  // Export functionality
+  exportToCSV: (params) => api.get('/api/vendors/export', { 
+    params,
+    responseType: 'blob' // Important for file downloads
+  }),
 };
 
 // User API functions

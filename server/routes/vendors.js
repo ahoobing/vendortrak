@@ -8,6 +8,132 @@ const router = express.Router();
 // Apply authentication to all vendor routes
 router.use(authenticateToken);
 
+// Export vendors to CSV
+router.get('/export', [
+  query('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
+  query('riskLevel').optional().isIn(['low', 'medium', 'high']),
+  query('search').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { status, riskLevel, search } = req.query;
+
+    // Build filter object
+    const filter = { tenantId: req.tenant._id };
+    if (status) filter.status = status;
+    if (riskLevel) filter.riskLevel = riskLevel;
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { industry: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Get all vendors matching the filter (no pagination for export)
+    const vendors = await Vendor.find(filter)
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .populate('dataTypes.dataTypeId', 'name description classification riskLevel')
+      .sort({ name: 1 });
+
+    // Convert vendors to CSV format
+    const csvHeaders = [
+      'Name',
+      'Email',
+      'Phone',
+      'Website',
+      'Address',
+      'City',
+      'State',
+      'Zip Code',
+      'Country',
+      'Industry',
+      'Description',
+      'Status',
+      'Risk Level',
+      'Contract Value',
+      'Contract Start Date',
+      'Contract End Date',
+      'Primary Contact',
+      'Primary Contact Email',
+      'Primary Contact Phone',
+      'Notes',
+      'Data Types',
+      'Created By',
+      'Created At',
+      'Updated By',
+      'Updated At'
+    ];
+
+    const csvRows = vendors.map(vendor => {
+      const dataTypes = vendor.dataTypes.map(dt => 
+        dt.dataTypeId ? `${dt.dataTypeId.name} (${dt.dataTypeId.classification})` : 'N/A'
+      ).join('; ');
+
+      return [
+        vendor.name || '',
+        vendor.email || '',
+        vendor.phone || '',
+        vendor.website || '',
+        vendor.address || '',
+        vendor.city || '',
+        vendor.state || '',
+        vendor.zipCode || '',
+        vendor.country || '',
+        vendor.industry || '',
+        vendor.description || '',
+        vendor.status || '',
+        vendor.riskLevel || '',
+        vendor.contractValue || '',
+        vendor.contractStartDate ? vendor.contractStartDate.toISOString().split('T')[0] : '',
+        vendor.contractEndDate ? vendor.contractEndDate.toISOString().split('T')[0] : '',
+        vendor.primaryContact || '',
+        vendor.primaryContactEmail || '',
+        vendor.primaryContactPhone || '',
+        vendor.notes || '',
+        dataTypes,
+        vendor.createdBy ? `${vendor.createdBy.firstName} ${vendor.createdBy.lastName}` : '',
+        vendor.createdAt ? vendor.createdAt.toISOString() : '',
+        vendor.updatedBy ? `${vendor.updatedBy.firstName} ${vendor.updatedBy.lastName}` : '',
+        vendor.updatedAt ? vendor.updatedAt.toISOString() : ''
+      ];
+    });
+
+    // Escape CSV values (handle commas, quotes, newlines)
+    const escapeCsvValue = (value) => {
+      if (value === null || value === undefined) return '';
+      const stringValue = String(value);
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
+    // Build CSV content
+    const csvContent = [
+      csvHeaders.map(escapeCsvValue).join(','),
+      ...csvRows.map(row => row.map(escapeCsvValue).join(','))
+    ].join('\n');
+
+    // Set response headers for CSV download
+    const filename = `vendors_export_${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-cache');
+
+    res.send(csvContent);
+
+  } catch (error) {
+    console.error('Export vendors error:', error);
+    res.status(500).json({ error: 'Failed to export vendors' });
+  }
+});
+
 // Get all vendors for tenant with filtering and pagination
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),

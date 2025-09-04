@@ -16,7 +16,8 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  Database
+  Database,
+  Download
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import VendorForm from '../components/VendorForm';
@@ -38,6 +39,7 @@ const Vendors = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDataTypesModal, setShowDataTypesModal] = useState(false);
   const [selectedVendorForDataTypes, setSelectedVendorForDataTypes] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -127,6 +129,49 @@ const Vendors = () => {
     });
   };
 
+  const handleExportCSV = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Build export parameters based on current filters
+      const exportParams = {};
+      if (searchTerm) exportParams.search = searchTerm;
+      if (statusFilter !== 'all') exportParams.status = statusFilter;
+      if (riskFilter !== 'all') exportParams.riskLevel = riskFilter;
+
+      const response = await vendorAPI.exportToCSV(exportParams);
+      
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'vendors_export.csv';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Vendors exported successfully!');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export vendors. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -164,13 +209,23 @@ const Vendors = () => {
           <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
           <p className="text-gray-600">Manage your vendor relationships</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Vendor
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExportCSV}
+            disabled={isExporting}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Vendor
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
