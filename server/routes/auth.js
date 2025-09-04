@@ -338,12 +338,13 @@ router.post('/forgot-password', [
 // Reset password with token
 router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('email').isEmail().withMessage('Valid email required'),
   body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('🔐 [RESET-PASSWORD] Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -351,6 +352,7 @@ router.post('/reset-password', [
 
     // Find user by email
     const user = await User.findOne({ email });
+    
     if (!user) {
       return res.status(400).json({ error: 'Invalid reset request' });
     }
