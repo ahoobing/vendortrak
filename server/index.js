@@ -8,10 +8,10 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const tenantRoutes = require('./routes/tenants');
 const vendorRoutes = require('./routes/vendors');
-const userRoutes = require('./routes/users');
+const userRoutes = require('./routes/users-debug');
 const dataTypeRoutes = require('./routes/dataTypes');
 const newsRoutes = require('./routes/news');
-const { authenticateToken } = require('./middleware/auth');
+const { authenticateToken } = require('./middleware/auth-debug');
 const newsScheduler = require('./services/newsScheduler');
 
 const app = express();

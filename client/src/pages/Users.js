@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const Users = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -52,10 +52,15 @@ const Users = () => {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
+      // Filter out empty values to prevent validation errors
+      const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([key, value]) => value && value.trim() !== '')
+      );
+      
       const params = new URLSearchParams({
         page: pagination.page,
         limit: pagination.limit,
-        ...filters
+        ...cleanFilters
       });
       
       const response = await api.get(`/api/users?${params}`);
@@ -75,17 +80,40 @@ const Users = () => {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await api.get('/api/users/stats/overview');
-      setStats(response.data.stats);
+      const response = await api.get('/api/users/stats');
+      setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-    fetchStats();
-  }, [fetchUsers, fetchStats]);
+    if (currentUser) {
+      fetchUsers();
+      fetchStats();
+    }
+  }, [fetchUsers, fetchStats, currentUser]);
+
+  // Show loading spinner while auth is loading
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show error if no user is authenticated
+  if (!currentUser) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600">Please log in to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
@@ -199,6 +227,11 @@ const Users = () => {
   };
 
   const canManageUsers = currentUser?.permissions?.canManageUsers;
+  
+  // Debug logging
+  console.log('🔍 [Users] currentUser:', currentUser);
+  console.log('🔍 [Users] currentUser.permissions:', currentUser?.permissions);
+  console.log('🔍 [Users] canManageUsers:', canManageUsers);
 
   return (
     <div className="space-y-6">
@@ -271,26 +304,14 @@ const Users = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="card">
-            <div className="card-body p-4">
-              <div className="flex items-center">
-                <UsersIcon className="w-8 h-8 text-blue-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="card">
             <div className="card-body p-4">
               <div className="flex items-center">
                 <UserCheck className="w-8 h-8 text-green-600" />
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-600">Active Users</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.active || 0}</p>
                 </div>
               </div>
             </div>
@@ -301,8 +322,7 @@ const Users = () => {
               <div className="flex items-center">
                 <Shield className="w-8 h-8 text-red-600" />
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Admins</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.roleDistribution.admin}</p>
+                  <p className="text-sm font-medium text-gray-900">{stats?.admins || 0}</p>
                 </div>
               </div>
             </div>
@@ -314,7 +334,57 @@ const Users = () => {
                 <UserX className="w-8 h-8 text-gray-600" />
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-600">Inactive</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.inactiveUsers}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.inactive || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="card">
+            <div className="card-body p-4">
+              <div className="flex items-center">
+                <UsersIcon className="w-8 h-8 text-blue-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.total || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="card">
+            <div className="card-body p-4">
+              <div className="flex items-center">
+                <UserCheck className="w-8 h-8 text-green-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Active Users</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.active || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="card">
+            <div className="card-body p-4">
+              <div className="flex items-center">
+                <Shield className="w-8 h-8 text-red-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Admins</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.admins || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="card">
+            <div className="card-body p-4">
+              <div className="flex items-center">
+                <UserX className="w-8 h-8 text-gray-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Inactive</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.inactive || 0}</p>
                 </div>
               </div>
             </div>
