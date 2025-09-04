@@ -54,6 +54,10 @@ export const vendorAPI = {
     params,
     responseType: 'blob' // Important for file downloads
   }),
+  exportToPDF: (params) => api.get('/api/vendors/export/pdf', { 
+    params,
+    responseType: 'blob' // Important for file downloads
+  }),
 };
 
 // User API functions

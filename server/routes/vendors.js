@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const Vendor = require('../models/Vendor');
 const { authenticateToken, requireManager } = require('../middleware/auth');
+const PDFDocument = require('pdfkit');
 
 const router = express.Router();
 
@@ -131,6 +132,84 @@ router.get('/export', [
   } catch (error) {
     console.error('Export vendors error:', error);
     res.status(500).json({ error: 'Failed to export vendors' });
+  }
+});
+
+// Export vendors to PDF
+router.get('/export/pdf', [
+  query('status').optional().isIn(['active', 'inactive', 'pending', 'suspended']),
+  query('riskLevel').optional().isIn(['low', 'medium', 'high']),
+  query('search').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { status, riskLevel, search } = req.query;
+
+    // Build filter object
+    const filter = { tenantId: req.tenant._id };
+    if (status) filter.status = status;
+    if (riskLevel) filter.riskLevel = riskLevel;
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { industry: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Get all vendors matching the filter
+    const vendors = await Vendor.find(filter)
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .populate('dataTypes.dataTypeId', 'name description classification riskLevel')
+      .sort({ name: 1 });
+
+    console.log('🔧 [PDF] Starting PDF generation with PDFKit...');
+    console.log('🔧 [PDF] Found', vendors.length, 'vendors to export');
+
+    // Create PDF document
+    const doc = new PDFDocument({ 
+      size: 'A4',
+      margins: {
+        top: 50,
+        bottom: 50,
+        left: 50,
+        right: 50
+      }
+    });
+
+    // Collect PDF data
+    const chunks = [];
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      console.log('🔧 [PDF] PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+
+      // Set response headers for PDF download
+      const filename = `vendors_export_${new Date().toISOString().split('T')[0]}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      console.log('🔧 [PDF] Sending PDF response with headers:');
+      console.log('🔧 [PDF] Content-Type:', res.getHeader('Content-Type'));
+      console.log('🔧 [PDF] Content-Disposition:', res.getHeader('Content-Disposition'));
+      console.log('🔧 [PDF] Content-Length:', res.getHeader('Content-Length'));
+
+      res.send(pdfBuffer);
+    });
+
+    // Generate PDF content
+    generateVendorPDF(doc, vendors, req.tenant.name, { status, riskLevel, search });
+
+  } catch (error) {
+    console.error('Export vendors to PDF error:', error);
+    res.status(500).json({ error: 'Failed to export vendors to PDF' });
   }
 });
 
@@ -767,5 +846,181 @@ router.delete('/:id/data-types/:dataTypeId', requireManager, async (req, res) =>
     res.status(500).json({ error: 'Failed to remove data type from vendor' });
   }
 });
+
+// Helper function to generate PDF content using PDFKit
+function generateVendorPDF(doc, vendors, tenantName, filters) {
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount || 0);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const exportDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  // Header
+  doc.fontSize(24)
+     .font('Helvetica-Bold')
+     .fillColor('#111827')
+     .text('Vendor Export Report', { align: 'center' });
+  
+  doc.moveDown(0.5);
+  doc.fontSize(16)
+     .font('Helvetica')
+     .fillColor('#6B7280')
+     .text(tenantName, { align: 'center' });
+  
+  doc.moveDown(1);
+
+  // Report Information
+  doc.fontSize(14)
+     .font('Helvetica-Bold')
+     .fillColor('#111827')
+     .text('Report Information');
+  
+  doc.moveDown(0.3);
+  doc.fontSize(12)
+     .font('Helvetica')
+     .fillColor('#6B7280')
+     .text(`Export Date: ${exportDate}`)
+     .text(`Total Vendors: ${vendors.length}`);
+
+  // Add filter information if any
+  const filterInfo = [];
+  if (filters.status) filterInfo.push(`Status: ${filters.status}`);
+  if (filters.riskLevel) filterInfo.push(`Risk Level: ${filters.riskLevel}`);
+  if (filters.search) filterInfo.push(`Search: "${filters.search}"`);
+  
+  if (filterInfo.length > 0) {
+    doc.text(`Filters Applied: ${filterInfo.join(', ')}`);
+  }
+
+  doc.moveDown(1);
+
+  // Summary Statistics
+  doc.fontSize(14)
+     .font('Helvetica-Bold')
+     .fillColor('#111827')
+     .text('Summary Statistics');
+  
+  doc.moveDown(0.5);
+  
+  const totalValue = vendors.reduce((sum, v) => sum + (v.contractValue || 0), 0);
+  const activeCount = vendors.filter(v => v.status === 'active').length;
+  const highRiskCount = vendors.filter(v => v.riskLevel === 'high').length;
+
+  doc.fontSize(12)
+     .font('Helvetica')
+     .fillColor('#6B7280')
+     .text(`Total Vendors: ${vendors.length}`, { continued: true })
+     .text(` | Active: ${activeCount}`, { continued: true })
+     .text(` | High Risk: ${highRiskCount}`, { continued: true })
+     .text(` | Total Value: ${formatCurrency(totalValue)}`);
+
+  doc.moveDown(1.5);
+
+  // Vendor Table
+  doc.fontSize(14)
+     .font('Helvetica-Bold')
+     .fillColor('#111827')
+     .text('Vendor Details');
+  
+  doc.moveDown(0.5);
+
+  // Table headers
+  const tableTop = doc.y;
+  const colWidths = [80, 100, 80, 60, 50, 50, 80, 70, 70, 80, 100];
+  const colPositions = [50];
+  
+  // Calculate column positions
+  for (let i = 1; i < colWidths.length; i++) {
+    colPositions.push(colPositions[i - 1] + colWidths[i - 1]);
+  }
+
+  const headers = ['Name', 'Email', 'Phone', 'Industry', 'Status', 'Risk', 'Value', 'Start', 'End', 'Contact', 'Data Types'];
+  
+  doc.fontSize(10)
+     .font('Helvetica-Bold')
+     .fillColor('#374151');
+  
+  headers.forEach((header, i) => {
+    doc.text(header, colPositions[i], tableTop, { width: colWidths[i] });
+  });
+
+  // Draw header line
+  doc.moveTo(50, tableTop + 15)
+     .lineTo(50 + colWidths.reduce((sum, width) => sum + width, 0), tableTop + 15)
+     .stroke();
+
+  let currentY = tableTop + 25;
+
+  // Vendor rows
+  doc.fontSize(9)
+     .font('Helvetica')
+     .fillColor('#1F2937');
+
+  vendors.forEach((vendor, index) => {
+    // Check if we need a new page
+    if (currentY > 700) {
+      doc.addPage();
+      currentY = 50;
+    }
+
+    const dataTypes = vendor.dataTypes.map(dt => 
+      dt.dataTypeId ? `${dt.dataTypeId.name} (${dt.dataTypeId.classification})` : 'N/A'
+    ).join(', ');
+
+    const rowData = [
+      vendor.name || 'N/A',
+      vendor.email || 'N/A',
+      vendor.phone || 'N/A',
+      vendor.industry || 'N/A',
+      (vendor.status || 'N/A').toUpperCase(),
+      (vendor.riskLevel || 'N/A').toUpperCase(),
+      formatCurrency(vendor.contractValue),
+      formatDate(vendor.contractStartDate),
+      formatDate(vendor.contractEndDate),
+      vendor.primaryContact || 'N/A',
+      dataTypes || 'None'
+    ];
+
+    rowData.forEach((data, i) => {
+      // Truncate long text
+      const displayText = data.length > 20 ? data.substring(0, 17) + '...' : data;
+      doc.text(displayText, colPositions[i], currentY, { width: colWidths[i] });
+    });
+
+    currentY += 20;
+
+    // Add separator line every 5 rows
+    if ((index + 1) % 5 === 0) {
+      doc.moveTo(50, currentY - 5)
+         .lineTo(50 + colWidths.reduce((sum, width) => sum + width, 0), currentY - 5)
+         .stroke();
+    }
+  });
+
+  // Footer
+  doc.fontSize(10)
+     .font('Helvetica')
+     .fillColor('#6B7280')
+     .text(`Generated on ${exportDate} | VendorTrak Export Report`, 50, doc.page.height - 30, { align: 'center' });
+
+  // Finalize the PDF
+  doc.end();
+}
 
 module.exports = router;

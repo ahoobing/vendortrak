@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { vendorAPI } from '../services/api';
 import { 
@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   Database,
-  Download
+  Download,
+  FileText
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import VendorForm from '../components/VendorForm';
@@ -40,8 +41,24 @@ const Vendors = () => {
   const [showDataTypesModal, setShowDataTypesModal] = useState(false);
   const [selectedVendorForDataTypes, setSelectedVendorForDataTypes] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const exportDropdownRef = useRef(null);
 
   const queryClient = useQueryClient();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Fetch vendors
   const { data: vendorsResponse, isLoading, error } = useQuery(
@@ -129,9 +146,10 @@ const Vendors = () => {
     });
   };
 
-  const handleExportCSV = async () => {
+  const handleExport = async (format) => {
     try {
       setIsExporting(true);
+      setShowExportDropdown(false);
       
       // Build export parameters based on current filters
       const exportParams = {};
@@ -139,17 +157,21 @@ const Vendors = () => {
       if (statusFilter !== 'all') exportParams.status = statusFilter;
       if (riskFilter !== 'all') exportParams.riskLevel = riskFilter;
 
-      const response = await vendorAPI.exportToCSV(exportParams);
+      const response = format === 'pdf' 
+        ? await vendorAPI.exportToPDF(exportParams)
+        : await vendorAPI.exportToCSV(exportParams);
       
       // Create blob and download
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([response.data], { 
+        type: format === 'pdf' ? 'application/pdf' : 'text/csv' 
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       
       // Get filename from response headers or use default
       const contentDisposition = response.headers['content-disposition'];
-      let filename = 'vendors_export.csv';
+      let filename = `vendors_export.${format}`;
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
         if (filenameMatch) {
@@ -163,10 +185,10 @@ const Vendors = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Vendors exported successfully!');
+      toast.success(`Vendors exported to ${format.toUpperCase()} successfully!`);
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export vendors. Please try again.');
+      toast.error(`Failed to export vendors to ${format.toUpperCase()}. Please try again.`);
     } finally {
       setIsExporting(false);
     }
@@ -210,14 +232,39 @@ const Vendors = () => {
           <p className="text-gray-600">Manage your vendor relationships</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={handleExportCSV}
-            disabled={isExporting}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            {isExporting ? 'Exporting...' : 'Export CSV'}
-          </button>
+          <div className="relative" ref={exportDropdownRef}>
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              disabled={isExporting}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Exporting...' : 'Export'}
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            
+            {showExportDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                <div className="py-1">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('pdf')}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Export as PDF
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <button
             onClick={() => setShowAddModal(true)}
             className="btn-primary flex items-center gap-2"
