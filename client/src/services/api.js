@@ -120,3 +120,14 @@ export const newsAPI = {
   getNewsByVendor: (vendorId, params = {}) => api.get(`/api/news/vendors/${vendorId}`, { params }),
   getNewsStats: () => api.get('/api/news/stats'),
 };
+
+// Audit API functions
+export const auditAPI = {
+  getLogs: (params = {}) => api.get('/api/audit', { params }),
+  getStats: (params = {}) => api.get('/api/audit/stats', { params }),
+  getLogById: (id) => api.get(`/api/audit/${id}`),
+  exportCSV: (params = {}) => api.get('/api/audit/export/csv', { 
+    params,
+    responseType: 'blob' // Important for file downloads
+  }),
+};

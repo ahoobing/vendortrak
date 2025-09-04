@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const AuditLog = require('../models/AuditLog');
 const { authenticateToken } = require('../middleware/auth-debug');
-const { requirePermission } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/auth-debug');
 
 // Get audit logs for the tenant
 router.get('/', authenticateToken, requirePermission('audit:logs'), async (req, res) => {

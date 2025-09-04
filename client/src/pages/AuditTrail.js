@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { api, auditAPI } from '../services/api';
 import { 
   Search, 
   Download, 
@@ -14,7 +14,7 @@ import {
 import toast from 'react-hot-toast';
 
 const AuditTrail = () => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [auditLogs, setAuditLogs] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ const AuditTrail = () => {
         }
       });
 
-      const response = await api.get(`/api/audit?${params.toString()}`);
+      const response = await auditAPI.getLogs(filters);
       
       if (response.data.success) {
         setAuditLogs(response.data.data);
@@ -81,7 +81,7 @@ const AuditTrail = () => {
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
 
-      const response = await api.get(`/api/audit/stats?${params.toString()}`);
+      const response = await auditAPI.getStats(filters);
       
       if (response.data.success) {
         setStats(response.data.data);
@@ -105,9 +105,7 @@ const AuditTrail = () => {
         }
       });
 
-      const response = await api.get(`/api/audit/export/csv?${params.toString()}`, {
-        responseType: 'blob'
-      });
+      const response = await auditAPI.exportCSV(filters);
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
