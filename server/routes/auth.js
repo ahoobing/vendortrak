@@ -1,11 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 const PasswordResetToken = require('../models/PasswordResetToken');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth-debug');
 
 const router = express.Router();
 
@@ -281,7 +282,7 @@ router.put('/change-password', authenticateToken, [
 
 // Forgot password - request password reset
 router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required')
+  body('email').isEmail().withMessage('Valid email required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -293,7 +294,9 @@ router.post('/forgot-password', [
 
     // Find user by email
     const user = await User.findOne({ email });
+    
     if (!user) {
+      console.log('🔐 [FORGOT-PASSWORD] No user found with email:', email);
       // Don't reveal if user exists or not for security
       return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
     }
