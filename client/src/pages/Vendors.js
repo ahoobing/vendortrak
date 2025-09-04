@@ -47,14 +47,32 @@ const Vendors = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const fileInputRef = useRef(null);
+  const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const columnSelectorRef = useRef(null);
+  
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState({
+    vendor: true,
+    contact: true,
+    status: true,
+    riskLevel: true,
+    subprocessor: true,
+    dataTypes: true,
+    contractValue: true,
+    lastUpdated: true,
+    actions: true
+  });
 
   const queryClient = useQueryClient();
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
         setShowExportDropdown(false);
+      }
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
+        setShowColumnSelector(false);
       }
     };
 
@@ -63,6 +81,29 @@ const Vendors = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Toggle column visibility
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }));
+  };
+
+  // Reset all columns to visible
+  const showAllColumns = () => {
+    setVisibleColumns({
+      vendor: true,
+      contact: true,
+      status: true,
+      riskLevel: true,
+      subprocessor: true,
+      dataTypes: true,
+      contractValue: true,
+      lastUpdated: true,
+      actions: true
+    });
+  };
 
   // Fetch vendors
   const { data: vendorsResponse, isLoading, error } = useQuery(
@@ -329,6 +370,53 @@ const Vendors = () => {
             )}
           </div>
           
+          {/* Column Selector */}
+          <div className="relative" ref={columnSelectorRef}>
+            <button
+              onClick={() => setShowColumnSelector(!showColumnSelector)}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Columns
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            
+            {showColumnSelector && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-gray-900">Show Columns</h3>
+                    <button
+                      onClick={showAllColumns}
+                      className="text-xs text-primary-600 hover:text-primary-700"
+                    >
+                      Show All
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {Object.entries(visibleColumns).map(([key, visible]) => (
+                      <label key={key} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={visible}
+                          onChange={() => toggleColumn(key)}
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 capitalize">
+                          {key === 'riskLevel' ? 'Risk Level' : 
+                           key === 'dataTypes' ? 'Data Types' : 
+                           key === 'contractValue' ? 'Contract Value' : 
+                           key === 'lastUpdated' ? 'Last Updated' : 
+                           key}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <button
             onClick={() => setShowAddModal(true)}
             className="btn-primary flex items-center gap-2"
@@ -492,144 +580,180 @@ const Vendors = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Vendor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Risk Level
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Subprocessor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Data Types
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contract Value
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Updated
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {visibleColumns.vendor && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Vendor
+                      </th>
+                    )}
+                    {visibleColumns.contact && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                    )}
+                    {visibleColumns.status && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    )}
+                    {visibleColumns.riskLevel && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Risk Level
+                      </th>
+                    )}
+                    {visibleColumns.subprocessor && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Subprocessor
+                      </th>
+                    )}
+                    {visibleColumns.dataTypes && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Data Types
+                      </th>
+                    )}
+                    {visibleColumns.contractValue && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contract Value
+                      </th>
+                    )}
+                    {visibleColumns.lastUpdated && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Updated
+                      </th>
+                    )}
+                    {visibleColumns.actions && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {vendors?.map((vendor) => (
                     <tr key={vendor._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                              <Building2 className="h-5 w-5 text-primary-600" />
+                      {visibleColumns.vendor && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                <Building2 className="h-5 w-5 text-primary-600" />
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {vendor.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {vendor.industry || 'N/A'}
+                              </div>
                             </div>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {vendor.name}
+                        </td>
+                      )}
+                      {visibleColumns.contact && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3 text-gray-400" />
+                              {vendor.email || 'N/A'}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {vendor.industry || 'N/A'}
+                            <div className="flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3 text-gray-400" />
+                              {vendor.phone || 'N/A'}
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3 text-gray-400" />
-                            {vendor.email || 'N/A'}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Phone className="h-3 w-3 text-gray-400" />
-                            {vendor.phone || 'N/A'}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
-                          {getStatusIcon(vendor.status)}
-                          <span className="ml-1 capitalize">{vendor.status}</span>
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(vendor.riskLevel)}`}>
-                          <span className="capitalize">{vendor.riskLevel || 'N/A'}</span>
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {vendor.isSubprocessor ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            <Building2 className="h-3 w-3 mr-1" />
-                            Yes
+                        </td>
+                      )}
+                      {visibleColumns.status && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
+                            {getStatusIcon(vendor.status)}
+                            <span className="ml-1 capitalize">{vendor.status}</span>
                           </span>
-                        ) : (
-                          <span className="text-sm text-gray-500">No</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center gap-1">
-                          <Database className="h-3 w-3 text-gray-400" />
-                          <span>{vendor.dataTypes?.length || 0} assigned</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {vendor.contractValue ? formatCurrency(vendor.contractValue) : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(vendor.updatedAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedVendor(vendor);
-                              setShowViewModal(true);
-                            }}
-                            className="text-primary-600 hover:text-primary-900"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedVendorForDataTypes(vendor);
-                              setShowDataTypesModal(true);
-                            }}
-                            className="text-green-600 hover:text-green-900"
-                            title="Manage Data Types"
-                          >
-                            <Database className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedVendor(vendor);
-                              setShowEditModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="Edit Vendor"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedVendor(vendor);
-                              setShowDeleteModal(true);
-                            }}
-                            className="text-red-600 hover:text-red-900"
-                            title="Delete Vendor"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
+                        </td>
+                      )}
+                      {visibleColumns.riskLevel && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(vendor.riskLevel)}`}>
+                            <span className="capitalize">{vendor.riskLevel || 'N/A'}</span>
+                          </span>
+                        </td>
+                      )}
+                      {visibleColumns.subprocessor && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {vendor.isSubprocessor ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <Building2 className="h-3 w-3 mr-1" />
+                              Yes
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-500">No</span>
+                          )}
+                        </td>
+                      )}
+                      {visibleColumns.dataTypes && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex items-center gap-1">
+                            <Database className="h-3 w-3 text-gray-400" />
+                            <span>{vendor.dataTypes?.length || 0} assigned</span>
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumns.contractValue && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {vendor.contractValue ? formatCurrency(vendor.contractValue) : 'N/A'}
+                        </td>
+                      )}
+                      {visibleColumns.lastUpdated && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(vendor.updatedAt)}
+                        </td>
+                      )}
+                      {visibleColumns.actions && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedVendor(vendor);
+                                setShowViewModal(true);
+                              }}
+                              className="text-primary-600 hover:text-primary-900"
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedVendorForDataTypes(vendor);
+                                setShowDataTypesModal(true);
+                              }}
+                              className="text-green-600 hover:text-green-900"
+                              title="Manage Data Types"
+                            >
+                              <Database className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedVendor(vendor);
+                                setShowEditModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Edit Vendor"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedVendor(vendor);
+                                setShowDeleteModal(true);
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete Vendor"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
