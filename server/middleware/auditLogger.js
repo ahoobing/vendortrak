@@ -78,6 +78,49 @@ const auditLogger = (options = {}) => {
       return originalJson.call(this, data);
     };
 
+    // Capture request payload for logging
+    let requestPayload = null;
+    let queryParams = null;
+    
+    // Capture request body for POST/PUT/PATCH requests
+    if (req.body && Object.keys(req.body).length > 0) {
+      // Create a sanitized copy of the request body
+      requestPayload = JSON.parse(JSON.stringify(req.body));
+      
+      // Remove sensitive fields from payload
+      const sensitiveFields = ['password', 'token', 'secret', 'key', 'authorization'];
+      const sanitizePayload = (obj) => {
+        if (typeof obj !== 'object' || obj === null) return obj;
+        
+        const sanitized = Array.isArray(obj) ? [] : {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
+            sanitized[key] = '[REDACTED]';
+          } else if (typeof value === 'object' && value !== null) {
+            sanitized[key] = sanitizePayload(value);
+          } else {
+            sanitized[key] = value;
+          }
+        }
+        return sanitized;
+      };
+      
+      requestPayload = sanitizePayload(requestPayload);
+    }
+    
+    // Capture query parameters for GET requests
+    if (req.method === 'GET' && req.query && Object.keys(req.query).length > 0) {
+      queryParams = { ...req.query };
+      
+      // Remove sensitive query parameters
+      const sensitiveFields = ['password', 'token', 'secret', 'key', 'authorization'];
+      for (const key of Object.keys(queryParams)) {
+        if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
+          queryParams[key] = '[REDACTED]';
+        }
+      }
+    }
+
     // Log the audit entry after response is sent
     res.on('finish', async () => {
       try {
@@ -114,6 +157,16 @@ const auditLogger = (options = {}) => {
             statusCode: res.statusCode,
             timestamp: new Date()
           };
+
+          // Add request payload to metadata
+          if (requestPayload) {
+            metadata.requestPayload = requestPayload;
+          }
+          
+          // Add query parameters to metadata
+          if (queryParams) {
+            metadata.queryParams = queryParams;
+          }
 
           // Add change tracking for UPDATE operations
           if (action === 'UPDATE' && originalData && responseData && responseData.data) {

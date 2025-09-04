@@ -582,6 +582,30 @@ const AuditTrail = () => {
                     </div>
                   )}
 
+                  {/* Request Payload */}
+                  {selectedLog.metadata?.requestPayload && (
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700 mb-2">Request Payload</div>
+                      <div className="bg-blue-50 p-4 rounded-md">
+                        <pre className="text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto">
+                          {JSON.stringify(selectedLog.metadata.requestPayload, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Query Parameters */}
+                  {selectedLog.metadata?.queryParams && (
+                    <div>
+                      <div className="block text-sm font-medium text-gray-700 mb-2">Query Parameters</div>
+                      <div className="bg-green-50 p-4 rounded-md">
+                        <pre className="text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto">
+                          {JSON.stringify(selectedLog.metadata.queryParams, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Metadata - Show changes if available */}
                   {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
                     <div>
@@ -610,6 +634,10 @@ const AuditTrail = () => {
                                 )}
                               </div>
                             ))}
+                          </div>
+                        ) : (selectedLog.metadata.requestPayload || selectedLog.metadata.queryParams) ? (
+                          <div className="text-sm text-gray-600">
+                            No field-level changes detected. See request payload or query parameters above for details.
                           </div>
                         ) : (
                           <pre className="text-sm text-gray-700 whitespace-pre-wrap">
