@@ -47,7 +47,7 @@ const createTestUser = async (userData = {}, tenantId = null) => {
     password: 'password123',
     firstName: 'Test',
     lastName: 'User',
-    role: 'user',
+    role: 'regular',
     status: 'active',
     emailVerified: true
   };

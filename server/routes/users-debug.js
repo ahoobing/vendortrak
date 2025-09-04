@@ -107,6 +107,92 @@ router.get('/', requirePermission('view:reports'), [
   }
 });
 
+// Get user statistics
+router.get('/stats', requirePermission('view:reports'), async (req, res) => {
+  try {
+    console.log('👥 [USERS] GET /stats - Getting user statistics');
+    
+    const stats = await User.aggregate([
+      { $match: { tenantId: req.tenant._id } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+          inactive: { $sum: { $cond: [{ $eq: ['$status', 'inactive'] }, 1, 0] } },
+          suspended: { $sum: { $cond: [{ $eq: ['$status', 'suspended'] }, 1, 0] } },
+          admins: { $sum: { $cond: [{ $eq: ['$role', 'admin'] }, 1, 0] } },
+          regular: { $sum: { $cond: [{ $eq: ['$role', 'regular'] }, 1, 0] } },
+          auditors: { $sum: { $cond: [{ $eq: ['$role', 'auditor'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    console.log('✅ [USERS] Statistics retrieved successfully');
+    
+    res.json(stats[0] || {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      suspended: 0,
+      admins: 0,
+      regular: 0,
+      auditors: 0
+    });
+  } catch (error) {
+    console.error('❌ [USERS] Get stats error:', error);
+    res.status(500).json({ error: 'Failed to get statistics' });
+  }
+});
+
+// Get user permissions
+router.get('/permissions', async (req, res) => {
+  try {
+    console.log('👥 [USERS] GET /permissions - Getting user permissions');
+    console.log('👥 [USERS] Current user:', req.user.email);
+    
+    const permissions = {
+      canManageUsers: req.user.permissions?.canManageUsers || false,
+      canManageVendors: req.user.permissions?.canManageVendors || false,
+      canManageDataTypes: req.user.permissions?.canManageDataTypes || false,
+      canViewReports: req.user.permissions?.canViewReports || false,
+      canExportData: req.user.permissions?.canExportData || false,
+      canAuditLogs: req.user.permissions?.canAuditLogs || false
+    };
+
+    console.log('✅ [USERS] Permissions retrieved successfully');
+    res.json({ permissions });
+  } catch (error) {
+    console.error('❌ [USERS] Get permissions error:', error);
+    res.status(500).json({ error: 'Failed to get permissions' });
+  }
+});
+
+// Get user by ID
+router.get('/:id', requirePermission('view:reports'), async (req, res) => {
+  try {
+    console.log('👥 [USERS] GET /:id - Getting user by ID');
+    console.log('👥 [USERS] User ID:', req.params.id);
+    
+    const user = await User.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id
+    }).select('-password');
+
+    if (!user) {
+      console.log('❌ [USERS] User not found:', req.params.id);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('✅ [USERS] User found:', user.email);
+    res.json({ user });
+
+  } catch (error) {
+    console.error('❌ [USERS] Get user error:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
 // Create new user
 router.post('/', requirePermission('manage:users'), [
   body('email').isEmail().normalizeEmail(),
@@ -228,67 +314,6 @@ router.delete('/:id', requirePermission('manage:users'), async (req, res) => {
   } catch (error) {
     console.error('❌ [USERS] Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user' });
-  }
-});
-
-// Get user statistics
-router.get('/stats', requirePermission('view:reports'), async (req, res) => {
-  try {
-    console.log('👥 [USERS] GET /stats - Getting user statistics');
-    
-    const stats = await User.aggregate([
-      { $match: { tenantId: req.tenant._id } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
-          inactive: { $sum: { $cond: [{ $eq: ['$status', 'inactive'] }, 1, 0] } },
-          suspended: { $sum: { $cond: [{ $eq: ['$status', 'suspended'] }, 1, 0] } },
-          admins: { $sum: { $cond: [{ $eq: ['$role', 'admin'] }, 1, 0] } },
-          regular: { $sum: { $cond: [{ $eq: ['$role', 'regular'] }, 1, 0] } },
-          auditors: { $sum: { $cond: [{ $eq: ['$role', 'auditor'] }, 1, 0] } }
-        }
-      }
-    ]);
-
-    console.log('✅ [USERS] Statistics retrieved successfully');
-    
-    res.json(stats[0] || {
-      total: 0,
-      active: 0,
-      inactive: 0,
-      suspended: 0,
-      admins: 0,
-      regular: 0,
-      auditors: 0
-    });
-  } catch (error) {
-    console.error('❌ [USERS] Get stats error:', error);
-    res.status(500).json({ error: 'Failed to get user statistics' });
-  }
-});
-
-// Get user permissions
-router.get('/permissions', async (req, res) => {
-  try {
-    console.log('👥 [USERS] GET /permissions - Getting user permissions');
-    console.log('👥 [USERS] Current user:', req.user?.email);
-    
-    if (!req.user) {
-      console.log('❌ [USERS] No authenticated user');
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    console.log('✅ [USERS] Permissions retrieved successfully');
-    
-    res.json({
-      permissions: req.user.permissions,
-      role: req.user.role
-    });
-  } catch (error) {
-    console.error('❌ [USERS] Get permissions error:', error);
-    res.status(500).json({ error: 'Failed to get user permissions' });
   }
 });
 
