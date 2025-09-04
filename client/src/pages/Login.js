@@ -170,16 +170,12 @@ const Login = () => {
               {/* Forgot Password Link */}
               <div className="flex items-center justify-end">
                 <div className="text-sm">
-                  <button
-                    type="button"
+                  <Link
+                    to="/forgot-password"
                     className="font-medium text-primary-600 hover:text-primary-500"
-                    onClick={() => {
-                      // TODO: Implement forgot password functionality
-                      alert('Forgot password functionality coming soon!');
-                    }}
                   >
                     Forgot your password?
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

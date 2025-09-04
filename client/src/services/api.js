@@ -81,6 +81,8 @@ export const authAPI = {
   getProfile: () => api.get('/api/auth/profile'),
   updateProfile: (data) => api.put('/api/auth/profile', data),
   changePassword: (data) => api.put('/api/auth/change-password', data),
+  forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/api/auth/reset-password', data),
 };
 
 // Data Type API functions
