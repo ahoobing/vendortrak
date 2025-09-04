@@ -250,7 +250,7 @@ const Users = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
+      <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600">Manage user accounts, roles, and permissions</p>
         </div>
@@ -264,7 +264,7 @@ const Users = () => {
           </button>
         )}
       </div>
-
+      
       {/* Welcome Message for Non-Admin Users */}
       {!canManageUsers && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -676,10 +676,14 @@ const UserModal = ({ title, formData, setFormData, onSubmit, onClose, mode }) =>
                   id="password"
                   type="password"
                   required
+                  minLength={8}
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+                <p className="mt-1 text-sm text-gray-500">
+                  Password must be at least 8 characters long
+                </p>
               </div>
             )}
             
