@@ -54,9 +54,14 @@ export const vendorAPI = {
     params,
     responseType: 'blob' // Important for file downloads
   }),
-  exportToPDF: (params) => api.get('/api/vendors/export/pdf', { 
+    exportToPDF: (params) => api.get('/api/vendors/export/pdf', {
     params,
     responseType: 'blob' // Important for file downloads
+  }),
+  importFromCSV: (formData) => api.post('/api/vendors/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   }),
 };
 

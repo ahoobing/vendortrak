@@ -3,8 +3,27 @@ const { body, validationResult, query } = require('express-validator');
 const Vendor = require('../models/Vendor');
 const { authenticateToken, requireManager } = require('../middleware/auth');
 const PDFDocument = require('pdfkit');
+const multer = require('multer');
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
+
+// Configure multer for file uploads
+const upload = multer({
+  dest: 'uploads/',
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV files are allowed'), false);
+    }
+  }
+});
 
 // Apply authentication to all vendor routes
 router.use(authenticateToken);
@@ -210,6 +229,142 @@ router.get('/export/pdf', [
   } catch (error) {
     console.error('Export vendors to PDF error:', error);
     res.status(500).json({ error: 'Failed to export vendors to PDF' });
+  }
+});
+
+// Import vendors from CSV
+router.post('/import', upload.single('csvFile'), async (req, res) => {
+  try {
+    console.log('🔧 [CSV IMPORT] Starting CSV import...');
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No CSV file uploaded' });
+    }
+
+    console.log('🔧 [CSV IMPORT] File uploaded:', req.file.originalname, 'Size:', req.file.size);
+
+    const results = [];
+    const errors = [];
+    let rowNumber = 0;
+
+    // Parse CSV file
+    await new Promise((resolve, reject) => {
+      fs.createReadStream(req.file.path)
+        .pipe(csv())
+        .on('data', (data) => {
+          rowNumber++;
+          console.log(`🔧 [CSV IMPORT] Processing row ${rowNumber}:`, data);
+          
+          try {
+            // Validate and clean the data
+            const vendorData = validateAndCleanVendorData(data, rowNumber);
+            if (vendorData) {
+              results.push(vendorData);
+            }
+          } catch (error) {
+            console.error(`🔧 [CSV IMPORT] Error in row ${rowNumber}:`, error.message);
+            errors.push({
+              row: rowNumber,
+              error: error.message,
+              data: data
+            });
+          }
+        })
+        .on('end', () => {
+          console.log(`🔧 [CSV IMPORT] CSV parsing completed. ${results.length} valid rows, ${errors.length} errors`);
+          resolve();
+        })
+        .on('error', (error) => {
+          console.error('🔧 [CSV IMPORT] CSV parsing error:', error);
+          reject(error);
+        });
+    });
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    if (results.length === 0) {
+      return res.status(400).json({ 
+        error: 'No valid vendor data found in CSV file',
+        errors: errors
+      });
+    }
+
+    // Insert vendors into database
+    console.log(`🔧 [CSV IMPORT] Inserting ${results.length} vendors into database...`);
+    
+    const insertedVendors = [];
+    const insertErrors = [];
+
+    for (let i = 0; i < results.length; i++) {
+      try {
+        const vendorData = results[i];
+        vendorData.tenantId = req.tenant._id;
+        vendorData.createdBy = req.user._id;
+        vendorData.updatedBy = req.user._id;
+
+        const vendor = new Vendor(vendorData);
+        const savedVendor = await vendor.save();
+        insertedVendors.push(savedVendor);
+        
+        console.log(`🔧 [CSV IMPORT] Successfully inserted vendor: ${savedVendor.name}`);
+      } catch (error) {
+        console.error(`🔧 [CSV IMPORT] Database error for row ${i + 1}:`, error.message);
+        insertErrors.push({
+          row: i + 1,
+          error: error.message,
+          data: results[i]
+        });
+      }
+    }
+
+    console.log(`🔧 [CSV IMPORT] Import completed. ${insertedVendors.length} vendors inserted, ${insertErrors.length} database errors`);
+
+    res.json({
+      message: 'CSV import completed',
+      summary: {
+        totalRows: rowNumber,
+        validRows: results.length,
+        insertedVendors: insertedVendors.length,
+        parseErrors: errors.length,
+        insertErrors: insertErrors.length
+      },
+      insertedVendors: insertedVendors.map(v => ({
+        id: v._id,
+        name: v.name,
+        email: v.email
+      })),
+      errors: [...errors, ...insertErrors]
+    });
+
+  } catch (error) {
+    console.error('CSV import error:', error);
+    
+    // Clean up uploaded file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ error: 'Failed to import CSV file' });
+  }
+});
+
+// Download CSV import template
+router.get('/import/template', (req, res) => {
+  try {
+    const templatePath = path.join(__dirname, 'vendor_import_template.csv');
+    
+    if (!fs.existsSync(templatePath)) {
+      return res.status(404).json({ error: 'Template file not found' });
+    }
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="vendor_import_template.csv"');
+    res.sendFile(templatePath);
+    
+  } catch (error) {
+    console.error('Template download error:', error);
+    res.status(500).json({ error: 'Failed to download template' });
   }
 });
 
@@ -1021,6 +1176,85 @@ function generateVendorPDF(doc, vendors, tenantName, filters) {
 
   // Finalize the PDF
   doc.end();
+}
+
+// Helper function to validate and clean vendor data from CSV
+function validateAndCleanVendorData(data, rowNumber) {
+  // Required fields
+  const requiredFields = ['name', 'email'];
+  
+  // Check required fields
+  for (const field of requiredFields) {
+    if (!data[field] || data[field].trim() === '') {
+      throw new Error(`Missing required field: ${field}`);
+    }
+  }
+
+  // Clean and validate data
+  const vendorData = {
+    name: data.name.trim(),
+    email: data.email.trim().toLowerCase(),
+    phone: data.phone ? data.phone.trim() : '',
+    website: data.website ? data.website.trim() : '',
+    address: {
+      street: data.street || data.address ? (data.street || data.address).trim() : '',
+      city: data.city ? data.city.trim() : '',
+      state: data.state ? data.state.trim() : '',
+      zipCode: data.zipCode || data.zip ? (data.zipCode || data.zip).trim() : '',
+      country: data.country ? data.country.trim() : ''
+    },
+    industry: data.industry ? data.industry.trim() : '',
+    description: data.description ? data.description.trim() : '',
+    status: data.status ? data.status.trim().toLowerCase() : 'active',
+    riskLevel: data.riskLevel ? data.riskLevel.trim().toLowerCase() : 'medium',
+    contractValue: data.contractValue ? parseFloat(data.contractValue) || 0 : 0,
+    contractStartDate: data.contractStartDate ? new Date(data.contractStartDate) : null,
+    contractEndDate: data.contractEndDate ? new Date(data.contractEndDate) : null,
+    primaryContact: data.primaryContact ? data.primaryContact.trim() : '',
+    contactEmail: data.contactEmail ? data.contactEmail.trim().toLowerCase() : '',
+    contactPhone: data.contactPhone ? data.contactPhone.trim() : '',
+    notes: data.notes ? data.notes.trim() : ''
+  };
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(vendorData.email)) {
+    throw new Error(`Invalid email format: ${vendorData.email}`);
+  }
+
+  // Validate status
+  const validStatuses = ['active', 'inactive', 'pending', 'suspended'];
+  if (vendorData.status && !validStatuses.includes(vendorData.status)) {
+    throw new Error(`Invalid status: ${vendorData.status}. Must be one of: ${validStatuses.join(', ')}`);
+  }
+
+  // Validate risk level
+  const validRiskLevels = ['low', 'medium', 'high'];
+  if (vendorData.riskLevel && !validRiskLevels.includes(vendorData.riskLevel)) {
+    throw new Error(`Invalid risk level: ${vendorData.riskLevel}. Must be one of: ${validRiskLevels.join(', ')}`);
+  }
+
+  // Validate contract value
+  if (vendorData.contractValue < 0) {
+    throw new Error(`Contract value cannot be negative: ${vendorData.contractValue}`);
+  }
+
+  // Validate dates
+  if (vendorData.contractStartDate && isNaN(vendorData.contractStartDate.getTime())) {
+    throw new Error(`Invalid contract start date: ${data.contractStartDate}`);
+  }
+
+  if (vendorData.contractEndDate && isNaN(vendorData.contractEndDate.getTime())) {
+    throw new Error(`Invalid contract end date: ${data.contractEndDate}`);
+  }
+
+  // Validate date range
+  if (vendorData.contractStartDate && vendorData.contractEndDate && 
+      vendorData.contractStartDate > vendorData.contractEndDate) {
+    throw new Error('Contract start date cannot be after end date');
+  }
+
+  return vendorData;
 }
 
 module.exports = router;

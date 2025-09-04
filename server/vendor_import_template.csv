@@ -1,0 +1,2 @@
+name,email,phone,website,street,city,state,zipCode,country,industry,description,status,riskLevel,contractValue,contractStartDate,contractEndDate,primaryContact,contactEmail,contactPhone,notes
+"Example Vendor","vendor@example.com","+1 (555) 123-4567","https://example.com","123 Main St","City","State","12345","Country","Industry","Vendor description","active","medium","25000","2024-01-01","2024-12-31","Contact Person","contact@example.com","+1 (555) 123-4568","Additional notes"

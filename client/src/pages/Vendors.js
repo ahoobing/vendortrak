@@ -18,7 +18,8 @@ import {
   ChevronUp,
   Database,
   Download,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import VendorForm from '../components/VendorForm';
@@ -43,6 +44,9 @@ const Vendors = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const exportDropdownRef = useRef(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   const queryClient = useQueryClient();
 
@@ -194,6 +198,57 @@ const Vendors = () => {
     }
   };
 
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+      toast.error('Please select a CSV file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      setShowImportModal(false);
+
+      const formData = new FormData();
+      formData.append('csvFile', file);
+
+      const response = await vendorAPI.importFromCSV(formData);
+      
+      // Refresh the vendors list
+      queryClient.invalidateQueries('vendors');
+
+      // Show success message with details
+      const { summary, errors } = response.data;
+      if (summary.insertedVendors > 0) {
+        toast.success(`Successfully imported ${summary.insertedVendors} vendors!`);
+      }
+      
+      if (errors && errors.length > 0) {
+        console.warn('Import completed with errors:', errors);
+        toast.error(`${errors.length} rows had errors. Check console for details.`);
+      }
+
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import CSV file. Please check the file format and try again.');
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -232,6 +287,15 @@ const Vendors = () => {
           <p className="text-gray-600">Manage your vendor relationships</p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            disabled={isImporting}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            {isImporting ? 'Importing...' : 'Import CSV'}
+          </button>
+          
           <div className="relative" ref={exportDropdownRef}>
             <button
               onClick={() => setShowExportDropdown(!showExportDropdown)}
@@ -674,6 +738,57 @@ const Vendors = () => {
             setSelectedVendorForDataTypes(null);
           }}
         />
+      )}
+
+      {/* Import CSV Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Import Vendors from CSV</h3>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  Select a CSV file to import vendors. The file should contain the following columns:
+                </p>
+                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded border mb-3">
+                  <strong>Required:</strong> name, email<br/>
+                  <strong>Optional:</strong> phone, website, street, city, state, zipCode, country, 
+                  industry, description, status, riskLevel, contractValue, contractStartDate, 
+                  contractEndDate, primaryContact, contactEmail, contactPhone, notes
+                </div>
+                <div className="flex justify-center">
+                  <a
+                    href="/api/vendors/import/template"
+                    download="vendor_import_template.csv"
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    📥 Download CSV Template
+                  </a>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleImport}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
